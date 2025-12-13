@@ -2,7 +2,7 @@
 
 This document outlines the development milestones for the `go-cggmp-tss` library. The project aims to implement a secure, network-agnostic Threshold Signature Scheme (TSS) library based on the CGGMP21 protocol.
 
-## Phase 1: Infrastructure & Primitives (基础架构与数学原语)
+## Phase 1: Infrastructure & Primitives
 
 **Goal**: Establish the project skeleton and implement the underlying cryptographic primitives required for CGGMP21.
 
@@ -23,43 +23,43 @@ This document outlines the development milestones for the `go-cggmp-tss` library
 
 - [x] **Testing**: Achieve >95% unit test coverage for `internal/crypto`.
 
-## Phase 2: Core Protocol - Key Generation (核心协议 - 密钥生成)
+## Phase 2: Core Protocol - Key Generation
 
 **Goal**: Implement the Distributed Key Generation (DKG) protocol.
 
-- [ ] **Protocol Logic (`internal/protocol/keygen`)**
-    - [ ] **Round 1**: Ephemeral key generation, Commitment creation, and Broadcast.
-    - [ ] **Round 2**: VSS (Verifiable Secret Sharing) share generation and P2P distribution.
-    - [ ] **Round 3**: VSS verification, de-commitment, and final public key calculation.
-    - [ ] **Round 4**: Proof of Secret Key (Schnorr) verification.
+- [x] **Protocol Logic (`internal/protocol/keygen`)**
+    - [x] **Round 1**: Ephemeral key generation, Commitment creation, and Broadcast.
+    - [x] **Round 2**: VSS (Verifiable Secret Sharing) share generation and P2P distribution.
+    - [x] **Round 3**: VSS verification, de-commitment, and final public key calculation.
+    - [x] **Round 4**: Proof of Secret Key (Schnorr) verification.
 
-- [ ] **State Machine Integration**
-    - [ ] Implement the `StateMachine` interface for the KeyGen flow.
-    - [ ] Handle state transitions and message routing logic.
+- [x] **State Machine Integration**
+    - [x] Implement the `StateMachine` interface for the KeyGen flow.
+    - [x] Handle state transitions and message routing logic.
 
-- [ ] **Demo**: Create an in-memory example simulating 3 parties performing KeyGen.
+- [x] **Demo**: Create an in-memory example simulating 3 parties performing KeyGen.
 
-## Phase 3: Core Protocol - Signing (核心协议 - 签名)
+## Phase 3: Core Protocol - Signing
 
 **Goal**: Implement the Threshold Signing protocol, including Pre-signing optimization.
 
-- [ ] **Protocol Logic (`internal/protocol/sign`)**
-    - [ ] **Round 1**: Nonce generation and commitment.
-    - [ ] **Round 2**: MtA (Multiplicative-to-Additive) protocol execution (Gamma & K).
-    - [ ] **Round 3**: Partial signature generation.
-    - [ ] **Round 4**: Signature aggregation and verification.
+- [x] **Protocol Logic (`internal/protocol/sign`)**
+    - [x] **Round 1**: Nonce generation and commitment.
+    - [x] **Round 2**: MtA (Multiplicative-to-Additive) protocol execution (Gamma & K).
+    - [x] **Round 3**: Partial signature generation.
+    - [x] **Round 4**: Signature aggregation and verification.
 
 - [ ] **Pre-signing Support**
     - [ ] Implement "Offline" phase (Pre-sign) to pre-calculate R values.
     - [ ] Implement "Online" phase for fast signature generation.
 
-- [ ] **Curve Support**
-    - [ ] Integrate `secp256k1` (Bitcoin/Ethereum).
+- [x] **Curve Support**
+    - [x] Integrate `secp256k1` (Bitcoin/Ethereum).
     - [ ] Design abstraction for future `Ed25519` support.
 
-- [ ] **Integration Testing**: End-to-end test: KeyGen -> Sign -> Verify on-chain (simulated).
+- [x] **Integration Testing**: End-to-end test: KeyGen -> Sign -> Verify on-chain (simulated).
 
-## Phase 4: Hardening & Optimization (生产级加固)
+## Phase 4: Hardening & Optimization
 
 **Goal**: Prepare the library for production use and security audits.
 

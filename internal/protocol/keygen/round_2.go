@@ -11,8 +11,11 @@ import (
 func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 	// 1. Process Round 1 Messages (Commitments)
 	peerCommitments := make(map[string][]byte)
-	for id, msg := range s.receivedMsgs {
-		peerCommitments[id] = msg.Payload()
+	for id, msgs := range s.receivedMsgs {
+		if len(msgs) == 0 {
+			continue
+		}
+		peerCommitments[id] = msgs[0].Payload()
 	}
 	s.tempData["peer_commitments"] = peerCommitments
 
@@ -95,7 +98,7 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 		round:        2,
 		saveData:     s.saveData,
 		tempData:     s.tempData,
-		receivedMsgs: make(map[string]tss.Message), // Clear for next round
+		receivedMsgs: make(map[string][]tss.Message), // Clear for next round
 	}
 
 	return newState, outMsgs, nil

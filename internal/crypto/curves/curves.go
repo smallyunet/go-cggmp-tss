@@ -19,6 +19,9 @@ type Curve interface {
 	// ScalarMult computes k * G (base point multiplication)
 	ScalarBaseMult(k *big.Int) (*big.Int, *big.Int)
 
+	// ScalarMult computes k * P
+	ScalarMult(Px, Py, k *big.Int) (*big.Int, *big.Int)
+
 	// Add combines two points
 	Add(x1, y1, x2, y2 *big.Int) (*big.Int, *big.Int)
 }
@@ -41,6 +44,10 @@ func (c *Secp256k1) NewScalar() (*big.Int, error) {
 
 func (c *Secp256k1) ScalarBaseMult(k *big.Int) (*big.Int, *big.Int) {
 	return secp256k1.S256().ScalarBaseMult(k.Bytes())
+}
+
+func (c *Secp256k1) ScalarMult(Px, Py, k *big.Int) (*big.Int, *big.Int) {
+	return secp256k1.S256().ScalarMult(Px, Py, k.Bytes())
 }
 
 func (c *Secp256k1) Add(x1, y1, x2, y2 *big.Int) (*big.Int, *big.Int) {

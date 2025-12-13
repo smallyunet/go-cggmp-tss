@@ -19,15 +19,26 @@ type LocalPartySaveData struct {
 
 	// Private Key Share (x_i)
 	ShareID *big.Int
-	Xi      *big.Int
+	// Xi removed (duplicate)
 
 	// Paillier Keys
 	PaillierSk *paillier.PrivateKey
 	PaillierPk *paillier.PublicKey
+	PeerPaillierPks map[string]*paillier.PublicKey
 
 	// Our share of the secret key (u_i)
 	// This is the constant term of our polynomial F_i(x)
 	Ui *big.Int
+
+	// The final secret key share x_i = sum(u_{j->i})
+	Xi *big.Int
+	// The public key share X_i = x_i * G
+	XiX *big.Int
+	XiY *big.Int
+
+	// The global public key X = sum(A_{j,0})
+	PublicKeyX *big.Int
+	PublicKeyY *big.Int
 }
 
 // KeyGenMessage is a concrete implementation of tss.Message for KeyGen
