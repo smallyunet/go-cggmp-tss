@@ -115,6 +115,27 @@ func (pk *PublicKey) Encrypt(m *big.Int) (*big.Int, *big.Int, error) {
 	return c, r, nil
 }
 
+// EncryptWithR encrypts a plaintext message m using a specific randomness r.
+// This is useful for Zero-Knowledge Proofs.
+func (pk *PublicKey) EncryptWithR(m, r *big.Int) (*big.Int, error) {
+	if m.Sign() == -1 || m.Cmp(pk.N) >= 0 {
+		return nil, errors.New("paillier: message m must be in range [0, n)")
+	}
+
+	// gm = 1 + n*m
+	gm := new(big.Int).Mul(pk.N, m)
+	gm.Add(gm, one)
+
+	// rn = r^n mod n^2
+	rn := new(big.Int).Exp(r, pk.N, pk.N2)
+
+	// c = gm * rn mod n^2
+	c := new(big.Int).Mul(gm, rn)
+	c.Mod(c, pk.N2)
+
+	return c, nil
+}
+
 // Decrypt decrypts a ciphertext c into a plaintext message m.
 func (priv *PrivateKey) Decrypt(c *big.Int) (*big.Int, error) {
 	if c.Sign() == -1 || c.Cmp(priv.N2) >= 0 {

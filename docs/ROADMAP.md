@@ -16,9 +16,9 @@ This document outlines the development milestones for the `go-cggmp-tss` library
         - Key generation, Encryption, Decryption.
         - Homomorphic addition and scalar multiplication.
     - [ ] **Zero-Knowledge Proofs (ZKPs)**: Implement ZKPs required by CGGMP21.
-        - Schnorr Proof (for public key ownership).
+        - [x] Schnorr Proof (for public key ownership).
         - [x] MtA (Multiplicative-to-Additive) protocol proofs.
-        - [ ] Range Proofs.
+        - [x] Range Proofs.
     - [x] **Commitment Scheme**: Implement secure hash commitment (e.g., SHA-256 based).
 
 - [x] **Testing**: Achieve >95% unit test coverage for `internal/crypto`.
