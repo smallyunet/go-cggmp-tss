@@ -25,7 +25,9 @@ type LocalPartySaveData struct {
 	PaillierSk *paillier.PrivateKey
 	PaillierPk *paillier.PublicKey
 
-	// TODO: Add other fields like NTilde, H1, H2 for MtA
+	// Our share of the secret key (u_i)
+	// This is the constant term of our polynomial F_i(x)
+	Ui *big.Int
 }
 
 // KeyGenMessage is a concrete implementation of tss.Message for KeyGen
