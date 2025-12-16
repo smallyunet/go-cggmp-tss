@@ -60,6 +60,18 @@ func (s *state) round4() (tss.StateMachine, []tss.Message, error) {
 	if r.Sign() == 0 {
 		return nil, nil, fmt.Errorf("calculated r is 0, retry signing")
 	}
+
+	if s.msgToSign == nil {
+		// Pre-signing mode: Stop here and return PreSignature
+		preSig := &PreSignature{
+			R:      r,
+			Rx:     Rx,
+			Ry:     Ry,
+			Ki:     s.tempData["ki"].(*big.Int),
+			SigmaI: s.tempData["sigma_i"].(*big.Int),
+		}
+		return &finishedState{preSignature: preSig}, nil, nil
+	}
 	
 	// 3. Compute s_i = m * k_i + r * sigma_i
 	// m is hash of message

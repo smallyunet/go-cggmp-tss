@@ -13,6 +13,15 @@ type Signature struct {
 	RecID int // Recovery ID (optional)
 }
 
+// PreSignature represents the pre-processed data generated in the offline phase.
+type PreSignature struct {
+	R      *big.Int
+	Rx     *big.Int
+	Ry     *big.Int
+	Ki     *big.Int
+	SigmaI *big.Int
+}
+
 // SignMessage is the concrete message type for Signing.
 type SignMessage struct {
 	FromParty   tss.PartyID

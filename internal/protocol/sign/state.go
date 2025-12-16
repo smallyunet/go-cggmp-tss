@@ -10,7 +10,8 @@ import (
 type state struct {
 	params   *tss.Parameters
 	keyData  *keygen.LocalPartySaveData
-	msgToSign []byte // The message (hash) to sign
+	msgToSign []byte // The message (hash) to sign. Nil if PreSign mode.
+	preSignature *PreSignature // Populated in Online mode
 
 	round    int
 	tempData map[string]interface{}
@@ -31,6 +32,33 @@ func NewStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySaveData,
 	}
 
 	return s.round1()
+}
+
+// NewPreSignStateMachine initializes a new Pre-Signing state machine (Offline phase).
+func NewPreSignStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySaveData) (tss.StateMachine, []tss.Message, error) {
+	s := &state{
+		params:       params,
+		keyData:      keyData,
+		msgToSign:    nil, // Indicates PreSign mode
+		round:        1,
+		tempData:     make(map[string]interface{}),
+		receivedMsgs: make(map[string][]tss.Message),
+	}
+	return s.round1()
+}
+
+// NewOnlineStateMachine initializes a new Online Signing state machine.
+func NewOnlineStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySaveData, preSig *PreSignature, msg []byte) (tss.StateMachine, []tss.Message, error) {
+	s := &state{
+		params:       params,
+		keyData:      keyData,
+		msgToSign:    msg,
+		preSignature: preSig,
+		round:        4, // We start by sending Round 4 message (s_i) and waiting for others
+		tempData:     make(map[string]interface{}),
+		receivedMsgs: make(map[string][]tss.Message),
+	}
+	return s.roundOnline1()
 }
 
 func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error) {
@@ -115,7 +143,8 @@ func (s *state) Details() string {
 
 // Finished state
 type finishedState struct {
-	signature *Signature
+	signature    *Signature
+	preSignature *PreSignature
 }
 
 func (s *finishedState) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error) {
@@ -123,7 +152,10 @@ func (s *finishedState) Update(msg tss.Message) (tss.StateMachine, []tss.Message
 }
 
 func (s *finishedState) Result() interface{} {
-	return s.signature
+	if s.signature != nil {
+		return s.signature
+	}
+	return s.preSignature
 }
 
 func (s *finishedState) Details() string {
