@@ -66,7 +66,7 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 		data := payload[32:]
 
 		if !commitment.Verify(peerCommitments[id], salt, data) {
-			return nil, nil, fmt.Errorf("commitment verification failed for %s", id)
+			return nil, nil, tss.NewBlame(decommitMsg.From(), "commitment verification failed", nil)
 		}
 
 		// Parse Data
@@ -115,7 +115,7 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 		}
 		
 		if shareG_x.Cmp(rhsX) != 0 || shareG_y.Cmp(rhsY) != 0 {
-			return nil, nil, fmt.Errorf("vss share verification failed for party %s", id)
+			return nil, nil, tss.NewBlame(shareMsg.From(), "vss share verification failed", nil)
 		}
 		
 		// Add share to sum

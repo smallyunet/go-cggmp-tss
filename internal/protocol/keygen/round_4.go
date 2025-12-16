@@ -57,7 +57,7 @@ func (s *state) round4() (tss.StateMachine, []tss.Message, error) {
 		}
 		
 		if !proof.Verify(&Xj_jac) {
-			return nil, nil, fmt.Errorf("schnorr proof verification failed for party %s", id)
+			return nil, nil, tss.NewBlame(msg.From(), "schnorr proof verification failed", nil)
 		}
 
 		// 3. Verify X_j against VSS
@@ -103,7 +103,7 @@ func (s *state) round4() (tss.StateMachine, []tss.Message, error) {
 		}
 		
 		if Xj_x.Cmp(expectedX) != 0 || Xj_y.Cmp(expectedY) != 0 {
-			return nil, nil, fmt.Errorf("public key share mismatch for party %s", id)
+			return nil, nil, tss.NewBlame(msg.From(), "public key share mismatch", nil)
 		}
 	}
 

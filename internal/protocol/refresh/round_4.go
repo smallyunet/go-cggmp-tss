@@ -62,7 +62,7 @@ func (s *state) round4() (tss.StateMachine, []tss.Message, error) {
 		}
 		
 		if !proof.Verify(&Xj_jac) {
-			return nil, nil, fmt.Errorf("schnorr proof failed for %s", id)
+			return nil, nil, tss.NewBlame(msg.From(), "schnorr proof verification failed", nil)
 		}
 		
 		allXiX[id] = Xj_x

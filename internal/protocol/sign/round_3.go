@@ -2,7 +2,6 @@ package sign
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/big"
 
 	"github.com/smallyu/go-cggmp-tss/internal/crypto/curves"
@@ -29,19 +28,28 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 		if err := json.Unmarshal(msgs[0].Payload(), &payload); err != nil {
 			return nil, nil, err
 		}
+
+		// Find party ID
+		var culprit tss.PartyID
+		for _, p := range s.params.Parties {
+			if p.ID() == id {
+				culprit = p
+				break
+			}
+		}
 		
 		// Decrypt C_delta to get alpha_ij
 		// This is response to MY EncK_i. So I use MY Secret Key.
 		alpha, err := s.keyData.PaillierSk.Decrypt(payload.C_delta)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to decrypt alpha from %s: %w", id, err)
+			return nil, nil, tss.NewBlame(culprit, "failed to decrypt alpha", err)
 		}
 		alphas[id] = alpha
 		
 		// Decrypt C_sigma to get mu_ij
 		mu, err := s.keyData.PaillierSk.Decrypt(payload.C_sigma)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to decrypt mu from %s: %w", id, err)
+			return nil, nil, tss.NewBlame(culprit, "failed to decrypt mu", err)
 		}
 		mus[id] = mu
 	}
