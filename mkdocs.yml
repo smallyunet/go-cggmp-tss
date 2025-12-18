@@ -1,0 +1,20 @@
+site_name: go-cggmp-tss
+site_url: https://smallyu.github.io/go-cggmp-tss/
+repo_url: https://github.com/smallyu/go-cggmp-tss
+repo_name: smallyu/go-cggmp-tss
+
+theme:
+  name: material
+  features:
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Usage Guide: USAGE.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
