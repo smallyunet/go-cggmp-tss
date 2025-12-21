@@ -4,9 +4,10 @@ import "errors"
 
 // Common errors returned by the TSS library
 var (
-	ErrRoundTimeout = errors.New("protocol round timeout")
-	ErrInvalidMsg   = errors.New("invalid message received")
-	ErrProtocolDone = errors.New("protocol already finished")
+	ErrRoundTimeout      = errors.New("protocol round timeout")
+	ErrInvalidMsg        = errors.New("invalid message received")
+	ErrProtocolDone      = errors.New("protocol already finished")
+	ErrInvalidParameters = errors.New("invalid parameters")
 )
 
 // PartyID represents a participant in the MPC protocol.
@@ -66,11 +67,11 @@ type StateMachine interface {
 
 // Parameters holds the configuration for a TSS protocol session.
 type Parameters struct {
-	PartyID    PartyID   // The identity of the local party
-	Parties    []PartyID // List of all participants (sorted)
-	Threshold  int       // The threshold (t)
-	Curve      string    // The elliptic curve to use (e.g., "secp256k1")
-	SessionID  []byte    // Unique session identifier to prevent replay attacks
+	PartyID   PartyID   // The identity of the local party
+	Parties   []PartyID // List of all participants (sorted)
+	Threshold int       // The threshold (t)
+	Curve     string    // The elliptic curve to use (e.g., "secp256k1")
+	SessionID []byte    // Unique session identifier to prevent replay attacks
 }
 
 // ProtocolInitializer defines the function signature for starting a new protocol.
