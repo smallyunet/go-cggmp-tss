@@ -1,0 +1,111 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Run Benchmarks
+      run: |
+        go test ./test/benchmark/... -bench=. -benchmem -benchtime=3x | tee benchmark_results.txt
+
+    - name: Parse and Update README
+      run: |
+        # Extract benchmark data
+        KEYGEN=$(grep "BenchmarkKeyGen3of3" benchmark_results.txt | awk '{print $3, $4, $5, $6, $7, $8}')
+        SIGN=$(grep "BenchmarkSign3of3" benchmark_results.txt | awk '{print $3, $4, $5, $6, $7, $8}')
+        PRESIGN=$(grep "BenchmarkPreSign3of3" benchmark_results.txt | awk '{print $3, $4, $5, $6, $7, $8}')
+        ONLINE=$(grep "BenchmarkOnlineSign3of3" benchmark_results.txt | awk '{print $3, $4, $5, $6, $7, $8}')
+        REFRESH=$(grep "BenchmarkRefresh3of3" benchmark_results.txt | awk '{print $3, $4, $5, $6, $7, $8}')
+        IDENTIFY=$(grep "BenchmarkIdentify3of3" benchmark_results.txt | awk '{print $3, $4, $5, $6, $7, $8}')
+        
+        # Function to format ns to human readable
+        format_time() {
+          local ns=$1
+          if (( ns >= 1000000000 )); then
+            echo "$(echo "scale=2; $ns / 1000000000" | bc)s"
+          elif (( ns >= 1000000 )); then
+            echo "$(echo "scale=1; $ns / 1000000" | bc)ms"
+          elif (( ns >= 1000 )); then
+            echo "$(echo "scale=1; $ns / 1000" | bc)µs"
+          else
+            echo "${ns}ns"
+          fi
+        }
+        
+        # Function to format bytes to human readable
+        format_bytes() {
+          local bytes=$1
+          if (( bytes >= 1048576 )); then
+            echo "$(echo "scale=1; $bytes / 1048576" | bc) MB"
+          elif (( bytes >= 1024 )); then
+            echo "$(echo "scale=1; $bytes / 1024" | bc) KB"
+          else
+            echo "${bytes} B"
+          fi
+        }
+        
+        # Parse each line
+        parse_bench() {
+          local line="$1"
+          local time_ns=$(echo "$line" | awk '{print $1}')
+          local mem_bytes=$(echo "$line" | awk '{print $3}')
+          local allocs=$(echo "$line" | awk '{print $5}')
+          echo "$(format_time $time_ns)|$(format_bytes $mem_bytes)|$allocs"
+        }
+        
+        KEYGEN_DATA=$(parse_bench "$KEYGEN")
+        SIGN_DATA=$(parse_bench "$SIGN")
+        PRESIGN_DATA=$(parse_bench "$PRESIGN")
+        ONLINE_DATA=$(parse_bench "$ONLINE")
+        REFRESH_DATA=$(parse_bench "$REFRESH")
+        IDENTIFY_DATA=$(parse_bench "$IDENTIFY")
+        
+        # Create temp file with new benchmark table
+        cat > /tmp/bench_table.md << EOF
+        ## Performance Benchmarks
+
+        Measured on GitHub Actions (ubuntu-latest), 3-of-3 threshold configuration:
+
+        | Protocol | Time | Memory | Allocations |
+        |----------|------|--------|-------------|
+        | **KeyGen** | $(echo $KEYGEN_DATA | cut -d'|' -f1) | $(echo $KEYGEN_DATA | cut -d'|' -f2) | $(echo $KEYGEN_DATA | cut -d'|' -f3) |
+        | **Sign** | $(echo $SIGN_DATA | cut -d'|' -f1) | $(echo $SIGN_DATA | cut -d'|' -f2) | $(echo $SIGN_DATA | cut -d'|' -f3) |
+        | **PreSign** (offline) | $(echo $PRESIGN_DATA | cut -d'|' -f1) | $(echo $PRESIGN_DATA | cut -d'|' -f2) | $(echo $PRESIGN_DATA | cut -d'|' -f3) |
+        | **OnlineSign** | $(echo $ONLINE_DATA | cut -d'|' -f1) | $(echo $ONLINE_DATA | cut -d'|' -f2) | $(echo $ONLINE_DATA | cut -d'|' -f3) |
+        | **Refresh** | $(echo $REFRESH_DATA | cut -d'|' -f1) | $(echo $REFRESH_DATA | cut -d'|' -f2) | $(echo $REFRESH_DATA | cut -d'|' -f3) |
+        | **Identify** | $(echo $IDENTIFY_DATA | cut -d'|' -f1) | $(echo $IDENTIFY_DATA | cut -d'|' -f2) | $(echo $IDENTIFY_DATA | cut -d'|' -f3) |
+
+        > 💡 **Tip**: Using Presigning reduces signing latency significantly.
+
+        Run benchmarks locally:
+        \`\`\`bash
+        go test ./test/benchmark/... -bench=. -benchmem
+        \`\`\`
+        EOF
+        
+        # Use sed to replace the benchmark section in README
+        # Find lines between "## Performance Benchmarks" and the next "## " header
+        sed -i '/## Performance Benchmarks/,/^## [^P]/{ /^## [^P]/!d; }' README.md
+        sed -i '/## Performance Benchmarks/r /tmp/bench_table.md' README.md
+        sed -i '/## Performance Benchmarks/{N;d;}' README.md
+
+    - name: Commit and Push
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git diff --quiet README.md || (git add README.md && git commit -m "chore: update benchmark results [skip ci]" && git push)

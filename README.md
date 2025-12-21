@@ -1,6 +1,7 @@
 # go-cggmp-tss
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/smallyu/go-cggmp-tss.svg)](https://pkg.go.dev/github.com/smallyu/go-cggmp-tss)
+[![CI](https://github.com/smallyu/go-cggmp-tss/actions/workflows/ci.yml/badge.svg)](https://github.com/smallyu/go-cggmp-tss/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A pure Go implementation of the **CGGMP21** Threshold Signature Scheme (TSS) protocol.
@@ -13,10 +14,37 @@ This library implements the [CGGMP21](https://eprint.iacr.org/2021/060) protocol
 
 ### Key Features
 
-*   **Protocol Compliance**: Implements the 4-round Key Generation, 5-round Signing, and **4-round Key Refresh** protocols from CGGMP21.
+*   **Protocol Compliance**: Implements CGGMP21 protocols:
+    - 4-round Key Generation
+    - 5-round Signing
+    - 4-round Key Refresh
+    - 4-round Key Resharing (committee/threshold changes)
+    - Presigning (offline preprocessing)
+*   **Identification Protocol**: ZKP proof of key ownership for accountability.
+*   **Batch Signing**: Sign multiple messages efficiently.
 *   **Network Agnostic**: Designed as a pure state machine. You bring your own transport layer (HTTP, gRPC, Libp2p, NATS, etc.).
 *   **Type Safety**: Leverages Go's strong typing to prevent common implementation errors.
 *   **Curve Support**: Native support for `secp256k1`.
+
+## Performance Benchmarks
+
+Measured on Apple M1, 3-of-3 threshold configuration:
+
+| Protocol | Time | Memory | Allocations |
+|----------|------|--------|-------------|
+| **KeyGen** | ~235ms | 8.5 MB | 14,609 |
+| **Sign** | ~354ms | 1.2 MB | 2,456 |
+| **PreSign** (offline) | ~318ms | 1.2 MB | 2,091 |
+| **OnlineSign** | **~0.4ms** | 12 KB | 206 |
+| **Refresh** | ~420ms | 10 MB | 27,378 |
+| **Identify** | **~0.6ms** | 4.6 KB | 79 |
+
+> 💡 **Tip**: Using Presigning reduces signing latency by ~1000x (from ~354ms to ~0.4ms).
+
+Run benchmarks locally:
+```bash
+go test ./test/benchmark/... -bench=. -benchmem
+```
 
 ## Installation
 
@@ -75,8 +103,9 @@ The library is structured to separate cryptographic primitives from protocol log
 
 *   `pkg/tss`: Core interfaces (`PartyID`, `Message`, `StateMachine`).
 *   `internal/crypto`: Cryptographic primitives (Paillier, ZK Proofs, Commitments).
-*   `internal/protocol`: Protocol implementations (`keygen`, `sign`).
+*   `internal/protocol`: Protocol implementations (`keygen`, `sign`, `refresh`, `reshare`, `identify`).
 
 ## License
 
 MIT
+
