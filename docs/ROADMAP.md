@@ -1,6 +1,6 @@
 # Roadmap
 
-## Supported Features (v0.0.4)
+## Supported Features (v0.0.5)
 - [x] Key Generation (CGGMP21 4-round)
 - [x] Threshold Signing (CGGMP21 5-round)
 - [x] Key Refresh (CGGMP21 4-round)

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.5] - 2025-12-22
+### Added
+- **Polynomial Tests**: Comprehensive test suite for polynomial package (91.7% coverage).
+- **E2E Tests**: Full protocol flow tests for KeyGen→Sign and KeyGen→Refresh.
+- **Example Code**: Runnable example demonstrating 2-of-3 threshold signature.
+- **Linting**: Added golangci-lint configuration and CI integration.
+
+### Fixed
+- Updated CHANGELOG to include all v0.0.4 features.
+- Cleaned up go.mod dependencies.
+
 ## [v0.0.4] - 2025-12-21
 ### Added
 - **Key Resharing**: Support for changing the committee (resharing shares to new parties) and threshold changes.
