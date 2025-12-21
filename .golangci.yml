@@ -1,0 +1,30 @@
+# golangci-lint configuration
+# See: https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - errcheck       # Check for unchecked errors
+    - gosimple       # Simplify code
+    - govet          # Go vet
+    - ineffassign    # Detect unused assignments
+    - staticcheck    # Static analysis
+    - unused         # Detect unused code
+    - gofmt          # Format check
+    - goimports      # Import formatting
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+  govet:
+    enable-all: true
+
+issues:
+  exclude-rules:
+    # Exclude test files from certain checks
+    - path: _test\.go
+      linters:
+        - errcheck
