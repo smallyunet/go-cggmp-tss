@@ -123,49 +123,89 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 	ready := false
 	switch s.round {
 	case 1:
-		// Expect commitments from all Old Parties (excluding self)
-		count := 0
-		for _, msgs := range s.receivedMsgs {
-			// Check if sender is in Old Committee
-			isSenderOld := false
-			for _, p := range s.oldParams.Parties {
-				if p.ID() == msgs[0].From().ID() {
-					isSenderOld = true
-					break
-				}
-			}
-			if isSenderOld {
-				count++
-			}
+		// Expect commitments from ALL parties (Old U New, excluding self)
+		// Old parties commit VSS. New parties commit Paillier.
+
+		// 1. Calculate Expected Count (Union of Old and New - Self)
+		expectedCount := 0
+		allIDs := make(map[string]bool)
+		for _, p := range s.oldParams.Parties {
+			allIDs[p.ID()] = true
 		}
-		expected := len(s.oldParams.Parties)
-		if s.isOldCommittee {
-			expected--
+		for _, p := range s.params.Parties {
+			allIDs[p.ID()] = true
 		}
-		if count >= expected {
+		delete(allIDs, s.params.PartyID.ID())
+		expectedCount = len(allIDs)
+
+		// 2. Count distinct parties we received from
+		receivedFromIDs := make(map[string]bool)
+		for id := range s.receivedMsgs {
+			receivedFromIDs[id] = true
+		}
+
+		if len(receivedFromIDs) >= expectedCount {
 			ready = true
 		}
 
 	case 2:
-		// Expect Decommit + Shares from Old Parties
-		count := 0
+		// Expect Decommit from ALL parties (Old U New, excluding self)
+		// AND Shares from Old Parties (if I am in New Committee)
+
+		// 1. Calculate Expected Decommits (same as Round 1)
+		allIDs := make(map[string]bool)
+		for _, p := range s.oldParams.Parties {
+			allIDs[p.ID()] = true
+		}
+		for _, p := range s.params.Parties {
+			allIDs[p.ID()] = true
+		}
+		delete(allIDs, s.params.PartyID.ID())
+		expectedDecommits := len(allIDs)
+
+		distinctDecommits := 0
+		sharesReceived := 0
+
+		// Expected Shares = Old Committee Size (minus self if I am Old)
+		// Used only if I am New Committee
+		expectedShares := 0
+		if s.isNewCommittee {
+			expectedShares = len(s.oldParams.Parties)
+			if s.isOldCommittee {
+				expectedShares--
+			}
+		}
+
 		for _, msgs := range s.receivedMsgs {
-			// If I am NOT in New Committee, I only expect Decommit (1 msg)
-			// If I am in New Committee, I expect Decommit + Share (2 msgs)
-			required := 1
-			if s.isNewCommittee {
-				required = 2
+			hasDecommit := false
+			hasShare := false
+			for _, m := range msgs {
+				if m.Type() == "ReshareRound2_Decommit" {
+					hasDecommit = true
+				} else if m.Type() == "ReshareRound2_Share" {
+					hasShare = true
+				}
 			}
-			if len(msgs) >= required {
-				count++
+
+			if hasDecommit {
+				distinctDecommits++
+			}
+			if hasShare {
+				sharesReceived++
 			}
 		}
-		expected := len(s.oldParams.Parties)
-		if s.isOldCommittee {
-			expected--
-		}
-		if count >= expected {
-			ready = true
+
+		if distinctDecommits >= expectedDecommits {
+			if !s.isNewCommittee {
+				// Old-Only: Just needs decommits (to finish? or wait?)
+				// Actually Old-Only doesn't produce output, just helps.
+				ready = true
+			} else {
+				// New Committee: Needs Shares too
+				if sharesReceived >= expectedShares {
+					ready = true
+				}
+			}
 		}
 
 	default:
