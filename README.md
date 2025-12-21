@@ -26,26 +26,6 @@ This library implements the [CGGMP21](https://eprint.iacr.org/2021/060) protocol
 *   **Type Safety**: Leverages Go's strong typing to prevent common implementation errors.
 *   **Curve Support**: Native support for `secp256k1`.
 
-## Performance Benchmarks
-
-Measured on Apple M1, 3-of-3 threshold configuration:
-
-| Protocol | Time | Memory | Allocations |
-|----------|------|--------|-------------|
-| **KeyGen** | ~235ms | 8.5 MB | 14,609 |
-| **Sign** | ~354ms | 1.2 MB | 2,456 |
-| **PreSign** (offline) | ~318ms | 1.2 MB | 2,091 |
-| **OnlineSign** | **~0.4ms** | 12 KB | 206 |
-| **Refresh** | ~420ms | 10 MB | 27,378 |
-| **Identify** | **~0.6ms** | 4.6 KB | 79 |
-
-> 💡 **Tip**: Using Presigning reduces signing latency by ~1000x (from ~354ms to ~0.4ms).
-
-Run benchmarks locally:
-```bash
-go test ./test/benchmark/... -bench=. -benchmem
-```
-
 ## Installation
 
 ```bash
