@@ -87,7 +87,10 @@ func NewStateMachine(params *tss.Parameters, oldParams *tss.Parameters, oldKeyDa
 }
 
 func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error) {
-	if msg.RoundNumber() != uint32(s.round) {
+	if msg.RoundNumber() < uint32(s.round) {
+		return s, nil, nil
+	}
+	if msg.RoundNumber() > uint32(s.round) {
 		return nil, nil, fmt.Errorf("received message for round %d, expected %d", msg.RoundNumber(), s.round)
 	}
 
@@ -145,10 +148,15 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 
 	case 2:
 		// Expect Decommit + Shares from Old Parties
-		// Logic similar to Round 1 but checking message types
 		count := 0
 		for _, msgs := range s.receivedMsgs {
-			if len(msgs) >= 2 { // Decommit + Share
+			// If I am NOT in New Committee, I only expect Decommit (1 msg)
+			// If I am in New Committee, I expect Decommit + Share (2 msgs)
+			required := 1
+			if s.isNewCommittee {
+				required = 2
+			}
+			if len(msgs) >= required {
 				count++
 			}
 		}
@@ -201,7 +209,7 @@ type finishedState struct {
 }
 
 func (s *finishedState) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error) {
-	return nil, nil, tss.ErrProtocolDone
+	return s, nil, nil
 }
 
 func (s *finishedState) Result() interface{} {

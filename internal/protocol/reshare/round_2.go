@@ -30,10 +30,6 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 		return nil, nil, fmt.Errorf("missing decommitment salt")
 	}
 
-	type CommitData struct {
-		PaillierN []byte     `json:"paillier_n,omitempty"`
-		VSS       []*big.Int `json:"vss,omitempty"`
-	}
 	cData := CommitData{}
 
 	if s.isNewCommittee {
@@ -49,6 +45,8 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 			return nil, nil, fmt.Errorf("old committee member missing vss commitments")
 		}
 		cData.VSS = vssCommitments
+		cData.GlobalPubX = s.oldKeyData.PublicKeyX.Bytes()
+		cData.GlobalPubY = s.oldKeyData.PublicKeyY.Bytes()
 	}
 
 	decommitData, err := json.Marshal(cData)

@@ -108,6 +108,9 @@ func (s *state) round4() (tss.StateMachine, []tss.Message, error) {
 			// den *= (ox - xj)
 			diff := new(big.Int).Sub(ox, xj)
 			diff.Mod(diff, N)
+			if diff.Sign() < 0 {
+				diff.Add(diff, N)
+			}
 			den.Mul(den, diff)
 			den.Mod(den, N)
 		}
@@ -126,8 +129,8 @@ func (s *state) round4() (tss.StateMachine, []tss.Message, error) {
 		}
 	}
 
-	// Verify Global Public Key
-	if X_sum_x.Cmp(s.oldKeyData.PublicKeyX) != 0 || X_sum_y.Cmp(s.oldKeyData.PublicKeyY) != 0 {
+	// Verify Global Public Key matches the one we agreed upon (or received from Old Committee)
+	if X_sum_x.Cmp(s.saveData.PublicKeyX) != 0 || X_sum_y.Cmp(s.saveData.PublicKeyY) != 0 {
 		return nil, nil, fmt.Errorf("global public key changed! refresh failed")
 	}
 

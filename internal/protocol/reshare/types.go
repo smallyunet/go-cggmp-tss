@@ -1,8 +1,18 @@
 package reshare
 
 import (
+	"math/big"
+
 	"github.com/smallyu/go-cggmp-tss/pkg/tss"
 )
+
+// CommitData is the data committed to in Round 1 and decommitted in Round 2.
+type CommitData struct {
+	PaillierN  []byte     `json:"paillier_n,omitempty"`
+	VSS        []*big.Int `json:"vss,omitempty"`
+	GlobalPubX []byte     `json:"global_pub_x,omitempty"`
+	GlobalPubY []byte     `json:"global_pub_y,omitempty"`
+}
 
 // ReshareMessage is the concrete message type for Key Resharing.
 type ReshareMessage struct {

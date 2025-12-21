@@ -79,12 +79,10 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 
 	shareSum := big.NewInt(0)
 
-	// Keep track of which Old Parties sent us shares
-	// We assume ALL Old Parties must participate for reconstruction
-	participatingOldIDs := make([]*big.Int, 0, len(s.oldParams.Parties))
-	for i := range s.oldParams.Parties {
-		participatingOldIDs = append(participatingOldIDs, big.NewInt(int64(i+1)))
-	}
+	// Keep track of which Old Parties sent us valid shares for reconstruction
+	validShares := make(map[string]*big.Int) // id -> share
+	// We also need to know the 'index' (x-coord) of each valid sender in the OLD committee.
+	validIndices := make(map[string]*big.Int)
 
 	// Helper to find index of a party in Old Committee
 	getOldPartyIndex := func(id string) int {
@@ -125,15 +123,14 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 				return nil, nil, tss.NewBlame(decommitMsg.From(), "commitment verification failed", nil)
 			}
 
-			// Parse Data to extract VSS (if any)
-			type CommitData struct {
-				PaillierN []byte     `json:"paillier_n,omitempty"`
-				VSS       []*big.Int `json:"vss,omitempty"`
-			}
+			// Parse Data
 			var cData CommitData
 			if err := json.Unmarshal(data, &cData); err != nil {
 				return nil, nil, fmt.Errorf("failed to unmarshal commit data from %s: %w", id, err)
 			}
+
+			// DEBUG
+			// fmt.Printf("Party %s received Decommit from %s. PubX Len: %d\n", s.params.PartyID.ID(), id, len(cData.GlobalPubX))
 
 			// Store Paillier PK (from peers in New Committee)
 			// But wait, do we need Paillier keys of New Committee?
@@ -146,6 +143,24 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 					s.saveData.PeerPaillierPks = make(map[string]*paillier.PublicKey)
 				}
 				s.saveData.PeerPaillierPks[id] = peerPk
+			}
+
+			// Capture Global Public Key (from Old Parties)
+			if cData.GlobalPubX != nil && cData.GlobalPubY != nil {
+				pubX := new(big.Int).SetBytes(cData.GlobalPubX)
+				pubY := new(big.Int).SetBytes(cData.GlobalPubY)
+
+				// Verify consistency if we already saw one
+				if s.saveData.PublicKeyX != nil {
+					if s.saveData.PublicKeyX.Cmp(pubX) != 0 || s.saveData.PublicKeyY.Cmp(pubY) != 0 {
+						return nil, nil, fmt.Errorf("inconsistent global public key from party %s", id)
+					}
+				} else {
+					s.saveData.PublicKeyX = pubX
+					s.saveData.PublicKeyY = pubY
+					// TODO: Also verify that this PubKey matches what we expect if we had prior knowledge?
+					// For reshare, we assume Old Parties provide the truth.
+				}
 			}
 
 			// If message has VSS, we verify the Share
@@ -175,85 +190,88 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 					return nil, nil, tss.NewBlame(shareMsg.From(), "vss share verification failed", nil)
 				}
 
-				// 2. Add weighted share to sum
-				// Calculate Lagrange Coefficient for this Sender (Old Party j)
-				// L_j(0) = product_{k != j} (0 - x_k) / (x_j - x_k)
-
+				// 2. Collect Valid Shares (don't sum yet)
 				senderIdxVal := getOldPartyIndex(id)
-				if senderIdxVal == -1 {
-					// Should not happen if we trusted params
-					continue
+				if senderIdxVal != -1 {
+					sIdx := big.NewInt(int64(senderIdxVal))
+					validShares[id] = share
+					validIndices[id] = sIdx
 				}
-				senderIdx := big.NewInt(int64(senderIdxVal))
-
-				lagrange := big.NewInt(1)
-				for _, k := range participatingOldIDs {
-					if k.Cmp(senderIdx) == 0 {
-						continue
-					}
-					// num = 0 - k = -k
-					num := new(big.Int).Sub(big.NewInt(0), k)
-					num.Mod(num, N)
-
-					// den = j - k
-					den := new(big.Int).Sub(senderIdx, k)
-					den.Mod(den, N)
-
-					// invDen = den^-1
-					invDen := new(big.Int).ModInverse(den, N)
-
-					term := new(big.Int).Mul(num, invDen)
-					term.Mod(term, N)
-
-					lagrange.Mul(lagrange, term)
-					lagrange.Mod(lagrange, N)
-				}
-
-				// weightedShare = share * lambda_j
-				weightedShare := new(big.Int).Mul(share, lagrange)
-				weightedShare.Mod(weightedShare, N)
-
-				shareSum.Add(shareSum, weightedShare)
-				shareSum.Mod(shareSum, N)
 			}
 		}
 	}
 
 	// Process Self Share (if any)
 	if selfShareVal, ok := s.tempData["self_share"].(*big.Int); ok {
-		// I am an Old Party and I sent a share to myself (New Party)
-		// I act as 'sender'
 		senderIdxVal := getOldPartyIndex(s.params.PartyID.ID())
 		if senderIdxVal != -1 {
-			senderIdx := big.NewInt(int64(senderIdxVal))
+			sIdx := big.NewInt(int64(senderIdxVal))
+			id := s.params.PartyID.ID()
+			validShares[id] = selfShareVal
+			validIndices[id] = sIdx
+		}
+	}
 
-			lagrange := big.NewInt(1)
-			for _, k := range participatingOldIDs {
-				if k.Cmp(senderIdx) == 0 {
-					continue
-				}
-				num := new(big.Int).Sub(big.NewInt(0), k)
-				num.Mod(num, N)
-				den := new(big.Int).Sub(senderIdx, k)
-				den.Mod(den, N)
-				invDen := new(big.Int).ModInverse(den, N)
-				term := new(big.Int).Mul(num, invDen)
-				term.Mod(term, N)
-				lagrange.Mul(lagrange, term)
-				lagrange.Mod(lagrange, N)
+	// Reconstruction: Use ALL valid shares (assuming t_old <= available shares)
+	expectedThreshold := s.oldParams.Threshold
+	if len(validShares) < expectedThreshold+1 {
+		return nil, nil, fmt.Errorf("not enough shares received: have %d, need %d", len(validShares), expectedThreshold+1)
+	}
+
+	// Use all valid indices for Lagrange
+	subsetIndices := make([]*big.Int, 0, len(validIndices))
+	for _, idx := range validIndices {
+		subsetIndices = append(subsetIndices, idx)
+	}
+
+	// Compute Share Sum using proper Lagrange coefficients for the FULL SET
+	for id, share := range validShares {
+		idx := validIndices[id]
+
+		// Calculate Lagrange Coefficient L_j(0) over the FULL SET
+		lagrange := big.NewInt(1)
+		for _, k := range subsetIndices {
+			if k.Cmp(idx) == 0 {
+				continue
+			}
+			// num = 0 - k = -k
+			num := new(big.Int).Sub(big.NewInt(0), k)
+			num.Mod(num, N)
+			if num.Sign() < 0 {
+				num.Add(num, N)
 			}
 
-			weightedShare := new(big.Int).Mul(selfShareVal, lagrange)
-			weightedShare.Mod(weightedShare, N)
+			// den = idx - k
+			den := new(big.Int).Sub(idx, k)
+			den.Mod(den, N)
+			if den.Sign() < 0 {
+				den.Add(den, N)
+			}
 
-			shareSum.Add(shareSum, weightedShare)
-			shareSum.Mod(shareSum, N)
+			// invDen = den^-1
+			invDen := new(big.Int).ModInverse(den, N)
+
+			term := new(big.Int).Mul(num, invDen)
+			term.Mod(term, N)
+
+			lagrange.Mul(lagrange, term)
+			lagrange.Mod(lagrange, N)
 		}
+
+		weightedShare := new(big.Int).Mul(share, lagrange)
+		weightedShare.Mod(weightedShare, N)
+
+		shareSum.Add(shareSum, weightedShare)
+		shareSum.Mod(shareSum, N)
 	}
 
 	// Update Secret Key
 	// For New Party: xiNew = sum(share * lambda)
 	// (Note: s.oldKeyData might be nil if I was not in old committee)
+
+	if s.saveData.PublicKeyX == nil || s.saveData.PublicKeyY == nil {
+		return nil, nil, fmt.Errorf("failed to recover global public key from decommitments")
+	}
 
 	s.saveData.Xi = shareSum
 	s.saveData.ShareID = myIdx

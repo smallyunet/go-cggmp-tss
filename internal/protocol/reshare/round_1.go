@@ -15,10 +15,6 @@ import (
 
 func (s *state) round1() (tss.StateMachine, []tss.Message, error) {
 	// 1. Setup Commit Data
-	type CommitData struct {
-		PaillierN []byte     `json:"paillier_n,omitempty"` // For New Committee
-		VSS       []*big.Int `json:"vss,omitempty"`        // For Old Committee
-	}
 	cData := CommitData{}
 
 	// 2. New Committee: Generate Paillier Key
@@ -56,6 +52,8 @@ func (s *state) round1() (tss.StateMachine, []tss.Message, error) {
 		}
 		s.tempData["vss_commitments"] = vssCommitments
 		cData.VSS = vssCommitments
+		cData.GlobalPubX = s.oldKeyData.PublicKeyX.Bytes()
+		cData.GlobalPubY = s.oldKeyData.PublicKeyY.Bytes()
 	}
 
 	// 4. Create and Broadcast Commitment

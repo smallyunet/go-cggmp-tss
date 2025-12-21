@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.4] - 2025-12-21
+### Added
+- **Key Resharing**: Support for changing the committee (resharing shares to new parties) and threshold changes.
+
 ## [v0.0.3] - 2025-12-21
 
 ### Added
