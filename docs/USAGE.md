@@ -153,3 +153,49 @@ if result == nil {
 signature := result.(*sign.Signature)
 fmt.Printf("R: %x\nS: %x\n", signature.R, signature.S)
 ```
+## Key Refresh
+
+Proactive security often involves refreshing the secret shares without changing the public key. This renders old shares useless.
+
+### Step 1: Initialize State Machine
+
+The `NewStateMachine` for refresh takes the `oldKeyData` as input.
+
+```go
+import "github.com/smallyu/go-cggmp-tss/internal/protocol/refresh"
+
+// keyData is your result from KeyGen
+state, outMsgs, err := refresh.NewStateMachine(params, keyData)
+if err != nil {
+    panic(err)
+}
+
+// Send initial messages
+network.Broadcast(outMsgs)
+```
+
+### Step 2: Event Loop
+
+The loop is identical to KeyGen and Signing.
+
+### Step 3: Get Result
+
+The result is a **new** `LocalPartySaveData` object.
+
+```go
+result := state.Result()
+if result == nil {
+    panic("Refresh failed")
+}
+
+newKeyData := result.(*keygen.LocalPartySaveData)
+
+// IMPORTANT: The Public Key (X, Y) should match the old key data.
+// But the Secret Share (Xi) and other internal values will be different.
+if newKeyData.PublicKeyX.Cmp(keyData.PublicKeyX) != 0 {
+    panic("Public key mismatch!")
+}
+
+// Overwrite the old keyData on disk
+saveToDisk(newKeyData)
+```

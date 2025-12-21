@@ -13,7 +13,7 @@ This library implements the [CGGMP21](https://eprint.iacr.org/2021/060) protocol
 
 ### Key Features
 
-*   **Protocol Compliance**: Implements the 4-round Key Generation and 5-round Signing protocols from CGGMP21.
+*   **Protocol Compliance**: Implements the 4-round Key Generation, 5-round Signing, and **4-round Key Refresh** protocols from CGGMP21.
 *   **Network Agnostic**: Designed as a pure state machine. You bring your own transport layer (HTTP, gRPC, Libp2p, NATS, etc.).
 *   **Type Safety**: Leverages Go's strong typing to prevent common implementation errors.
 *   **Curve Support**: Native support for `secp256k1`.
