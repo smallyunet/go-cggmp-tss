@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Go CGGMP-TSS WASM Test</title>
+    <script src="wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+            go.run(result.instance);
+            console.log("WASM Initialized");
+            startTest();
+        });
+
+        async function startTest() {
+            log("Starting 3-Party KeyGen Test (1-Round Optimization)...");
+
+            const parties = ["1", "2", "3"];
+            const threshold = 1;
+
+            // Initialize sessions
+            const sessions = {};
+            for (const pid of parties) {
+                const params = {
+                    partyID: pid,
+                    allParties: parties,
+                    threshold: threshold,
+                    sessionID: "sess-1",
+                    oneRoundKeyGen: true
+                };
+
+                log(`[${pid}] Initializing...`);
+                try {
+                    const respStr = GoCGGMP.NewKeyGen(JSON.stringify(params));
+                    const resp = JSON.parse(respStr);
+                    sessions[pid] = {
+                        id: resp.sessionID,
+                        msgs: resp.messages || []
+                    };
+                    log(`[${pid}] Initialized. Generated ${sessions[pid].msgs.length} messages.`);
+                } catch (e) {
+                    log(`[${pid}] Error: ${e}`);
+                    return;
+                }
+            }
+
+            // Route messages (Round 1)
+            // Collect all messages
+            let allMsgs = [];
+            for (const pid of parties) {
+                sessions[pid].msgs.forEach(m => allMsgs.push(m));
+                sessions[pid].msgs = []; // Clear buffer
+            }
+
+            log(`Routing ${allMsgs.length} messages...`);
+
+            // Deliver
+            for (const pid of parties) {
+                const s = sessions[pid];
+                for (const msg of allMsgs) {
+                    if (msg.from === pid) continue;
+                    
+                    // Check logic (Broadcast or P2P)
+                    if (!msg.isBroadcast) {
+                         if (!msg.to.includes(pid)) continue;
+                    }
+
+                    log(`[${pid}] Processing msg from ${msg.from} (${msg.type})...`);
+                    const msgJson = JSON.stringify(msg);
+                    try {
+                        const outStr = GoCGGMP.Update(s.id, msgJson);
+                        const out = JSON.parse(outStr);
+                        if (out && out.length > 0) {
+                             log(`[${pid}] Produced ${out.length} new messages.`);
+                             // For 1-Round, we shouldn't produce more messages in Round 2 (which is finish)
+                        }
+                    } catch (e) {
+                        log(`[${pid}] Update Error: ${e}`);
+                    }
+                }
+            }
+            
+            // Check Results
+            for (const pid of parties) {
+                try {
+                    const resStr = GoCGGMP.Result(sessions[pid].id);
+                    if (resStr) {
+                         const res = JSON.parse(resStr);
+                         log(`[${pid}] FINISHED! Public Key X: ${res.PublicKeyX}`);
+                    } else {
+                         log(`[${pid}] Not finished.`);
+                    }
+                } catch (e) {
+                    log(`[${pid}] Result Error: ${e}`);
+                }
+            }
+        }
+
+        function log(msg) {
+            const el = document.getElementById("log");
+            el.innerText += msg + "\n";
+            console.log(msg);
+        }
+    </script>
+</head>
+<body>
+    <h1>TSS WASM Test</h1>
+    <pre id="log"></pre>
+</body>
+</html>

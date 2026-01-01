@@ -82,6 +82,12 @@ func (s *state) round2Direct() (tss.StateMachine, []tss.Message, error) {
 			vssPoly[k*2] = new(big.Int).SetBytes(xBytes)
 			vssPoly[k*2+1] = new(big.Int).SetBytes(yBytes)
 		}
+
+		fmt.Printf("DEBUG: Receiver %s parsed VSS from %s: C0=(%s, %s)\n", s.params.PartyID.ID(), id, vssPoly[0].String(), vssPoly[1].String())
+		if len(vssPoly) > 2 {
+			fmt.Printf("DEBUG: Receiver %s parsed VSS from %s: C1=(%s, %s)\n", s.params.PartyID.ID(), id, vssPoly[2].String(), vssPoly[3].String())
+		}
+
 		allVss[id] = vssPoly
 
 		// 2. Verify Share

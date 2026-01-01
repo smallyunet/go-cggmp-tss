@@ -19,3 +19,8 @@ coverage.txt
 # IDEs
 .vscode/
 .idea/
+
+# WASM
+*.wasm
+examples/wasm/wasm_exec.js
+examples/wasm/output.log

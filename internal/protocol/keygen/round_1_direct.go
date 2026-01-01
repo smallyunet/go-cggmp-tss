@@ -40,11 +40,17 @@ func (s *state) round1Direct() (tss.StateMachine, []tss.Message, error) {
 	// C_k = a_k * G
 	vssCommitments := make([]*big.Int, len(poly.Coefficients)*2) // Store as (x, y) pairs flattened
 	for i, coeff := range poly.Coefficients {
+		fmt.Printf("DEBUG: Sender %s Coeff[%d] = %s\n", s.params.PartyID.ID(), i, coeff.String())
 		x, y := curve.ScalarBaseMult(coeff)
 		vssCommitments[i*2] = x
 		vssCommitments[i*2+1] = y
 	}
 	s.tempData["vss_commitments"] = vssCommitments
+
+	fmt.Printf("DEBUG: Sender %s generated VSS C0=(%s, %s)\n", s.params.PartyID.ID(), vssCommitments[0].String(), vssCommitments[1].String())
+	if len(vssCommitments) > 2 {
+		fmt.Printf("DEBUG: Sender %s generated VSS C1=(%s, %s)\n", s.params.PartyID.ID(), vssCommitments[2].String(), vssCommitments[3].String())
+	}
 
 	// 4. Prepare Broadcast Payload (PaillierPK || VSS_Commitments)
 	// Same serialization as Round 2 Decommit, but without Salt.
