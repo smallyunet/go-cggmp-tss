@@ -36,6 +36,11 @@ func NewStateMachine(params *tss.Parameters) (tss.StateMachine, []tss.Message, e
 		receivedMsgs: make(map[string][]tss.Message),
 	}
 
+	// Check initialization logic
+	if params.OneRoundKeyGen {
+		return s.round1Direct()
+	}
+
 	return s.round1()
 }
 
@@ -55,28 +60,41 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 	if s.receivedMsgs == nil {
 		s.receivedMsgs = make(map[string][]tss.Message)
 	}
-	
+
 	// Check for duplicates (simple check based on type)
 	for _, existing := range s.receivedMsgs[senderID] {
 		if existing.Type() == msg.Type() {
 			return nil, nil, fmt.Errorf("duplicate message type %s from party %s", msg.Type(), senderID)
 		}
 	}
-	
+
 	s.receivedMsgs[senderID] = append(s.receivedMsgs[senderID], msg)
 
 	// Check if we have received all expected messages from all other parties
+	// Check if we have received all expected messages from all other parties
+	// Standard:
 	// Round 1: 1 Broadcast per peer
 	// Round 2: 1 Broadcast + 1 P2P per peer
 	// Round 3: 1 Broadcast per peer
+
+	// OneRoundKeyGen:
+	// Round 1: 1 Broadcast + 1 P2P per peer
+
 	expectedCount := 0
-	switch s.round {
-	case 1:
-		expectedCount = 1
-	case 2:
-		expectedCount = 2
-	case 3:
-		expectedCount = 1
+	if s.params.OneRoundKeyGen {
+		switch s.round {
+		case 1:
+			expectedCount = 2 // Broadcast + Share
+		}
+	} else {
+		switch s.round {
+		case 1:
+			expectedCount = 1
+		case 2:
+			expectedCount = 2
+		case 3:
+			expectedCount = 1
+		}
 	}
 
 	// Check if all peers have sent enough messages
@@ -96,6 +114,16 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 }
 
 func (s *state) nextRound() (tss.StateMachine, []tss.Message, error) {
+	if s.params.OneRoundKeyGen {
+		switch s.round {
+		case 1:
+			return s.round2Direct()
+		// No further rounds
+		default:
+			return nil, nil, fmt.Errorf("unknown round %d in direct mode", s.round)
+		}
+	}
+
 	switch s.round {
 	case 1:
 		return s.round2()

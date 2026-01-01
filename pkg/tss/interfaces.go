@@ -72,6 +72,9 @@ type Parameters struct {
 	Threshold int       // The threshold (t)
 	Curve     string    // The elliptic curve to use (e.g., "secp256k1")
 	SessionID []byte    // Unique session identifier to prevent replay attacks
+
+	// Optimization Flags
+	OneRoundKeyGen bool // If true, use 1-Round KeyGen (skipping commitment round)
 }
 
 // ProtocolInitializer defines the function signature for starting a new protocol.

@@ -14,7 +14,7 @@
 ## Planned Features
 
 ### Phase 1: Optimization
-- [ ] 1-Round KeyGen (using simpler assumptions)
+- [x] 1-Round KeyGen (using simpler assumptions)
 
 ### Phase 2: Ecosystem
 - [ ] WebAssembly (WASM) support
