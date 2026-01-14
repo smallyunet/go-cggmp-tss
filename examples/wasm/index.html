@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Go CGGMP-TSS WASM Test</title>
@@ -9,11 +10,14 @@
         WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
             go.run(result.instance);
             console.log("WASM Initialized");
-            startTest();
+            startKeyGenTest();
         });
 
-        async function startTest() {
-            log("Starting 3-Party KeyGen Test (1-Round Optimization)...");
+        // Store key data for signing
+        const keyStore = {};
+
+        async function startKeyGenTest() {
+            log("=== Starting 3-Party KeyGen Test (1-Round Optimization) ===");
 
             const parties = ["1", "2", "3"];
             const threshold = 1;
@@ -25,74 +29,165 @@
                     partyID: pid,
                     allParties: parties,
                     threshold: threshold,
-                    sessionID: "sess-1",
+                    sessionID: "sess-keygen-1",
                     oneRoundKeyGen: true
                 };
 
-                log(`[${pid}] Initializing...`);
                 try {
                     const respStr = GoCGGMP.NewKeyGen(JSON.stringify(params));
+                    if (respStr.startsWith("error:")) throw respStr;
+
                     const resp = JSON.parse(respStr);
                     sessions[pid] = {
                         id: resp.sessionID,
                         msgs: resp.messages || []
                     };
-                    log(`[${pid}] Initialized. Generated ${sessions[pid].msgs.length} messages.`);
+                    log(`[${pid}] KeyGen Initialized.`);
                 } catch (e) {
                     log(`[${pid}] Error: ${e}`);
                     return;
                 }
             }
 
-            // Route messages (Round 1)
-            // Collect all messages
-            let allMsgs = [];
+            await runProtocolLoop(parties, sessions);
+
+            // Check Results and Collect Keys
+            let successCount = 0;
             for (const pid of parties) {
-                sessions[pid].msgs.forEach(m => allMsgs.push(m));
-                sessions[pid].msgs = []; // Clear buffer
-            }
-
-            log(`Routing ${allMsgs.length} messages...`);
-
-            // Deliver
-            for (const pid of parties) {
-                const s = sessions[pid];
-                for (const msg of allMsgs) {
-                    if (msg.from === pid) continue;
-                    
-                    // Check logic (Broadcast or P2P)
-                    if (!msg.isBroadcast) {
-                         if (!msg.to.includes(pid)) continue;
+                try {
+                    const resStr = GoCGGMP.Result(sessions[pid].id);
+                    if (resStr) {
+                        const res = JSON.parse(resStr);
+                        log(`[${pid}] KeyGen FINISHED! Public Key X: ${res.PublicKeyX}`);
+                        keyStore[pid] = res;
+                        successCount++;
+                    } else {
+                        log(`[${pid}] KeyGen Not finished.`);
                     }
-
-                    log(`[${pid}] Processing msg from ${msg.from} (${msg.type})...`);
-                    const msgJson = JSON.stringify(msg);
-                    try {
-                        const outStr = GoCGGMP.Update(s.id, msgJson);
-                        const out = JSON.parse(outStr);
-                        if (out && out.length > 0) {
-                             log(`[${pid}] Produced ${out.length} new messages.`);
-                             // For 1-Round, we shouldn't produce more messages in Round 2 (which is finish)
-                        }
-                    } catch (e) {
-                        log(`[${pid}] Update Error: ${e}`);
-                    }
+                } catch (e) {
+                    log(`[${pid}] Result Error: ${e}`);
                 }
             }
-            
+
+            if (successCount === parties.length) {
+                setTimeout(startSigningTest, 1000);
+            } else {
+                log("KeyGen failed. Aborting Signing test.");
+            }
+        }
+
+        async function startSigningTest() {
+            log("\n=== Starting 3-Party Signing Test ===");
+
+            const parties = ["1", "2", "3"];
+            const threshold = 1;
+            const msgToSign = "DeadBeef"; // Hex encoded message
+
+            const sessions = {};
+            for (const pid of parties) {
+                if (!keyStore[pid]) {
+                    log(`[${pid}] No key data found!`);
+                    return;
+                }
+
+                const params = {
+                    partyID: pid,
+                    allParties: parties,
+                    threshold: threshold,
+                    sessionID: "sess-sign-1",
+                    oneRoundKeyGen: false, // Ignored for sign, but good practice
+                    keyData: keyStore[pid],
+                    msgToSign: msgToSign
+                };
+
+                try {
+                    const respStr = GoCGGMP.NewSigning(JSON.stringify(params));
+                    if (respStr.startsWith("error:")) throw respStr;
+
+                    const resp = JSON.parse(respStr);
+                    sessions[pid] = {
+                        id: resp.sessionID,
+                        msgs: resp.messages || []
+                    };
+                    log(`[${pid}] Signing Initialized.`);
+                } catch (e) {
+                    log(`[${pid}] Error: ${e}`);
+                    return;
+                }
+            }
+
+            await runProtocolLoop(parties, sessions);
+
             // Check Results
             for (const pid of parties) {
                 try {
                     const resStr = GoCGGMP.Result(sessions[pid].id);
                     if (resStr) {
-                         const res = JSON.parse(resStr);
-                         log(`[${pid}] FINISHED! Public Key X: ${res.PublicKeyX}`);
+                        const res = JSON.parse(resStr);
+                        log(`[${pid}] Signing FINISHED! R: ${res.R}, S: ${res.S}`);
                     } else {
-                         log(`[${pid}] Not finished.`);
+                        log(`[${pid}] Signing Not finished.`);
                     }
                 } catch (e) {
                     log(`[${pid}] Result Error: ${e}`);
                 }
+            }
+        }
+
+        async function runProtocolLoop(parties, sessions) {
+            // Route messages until no more messages are produced (or timeout/limit)
+            // Simple synchronous loop for simulation
+            let round = 1;
+            const maxRounds = 20;
+
+            while (round < maxRounds) {
+                // Collect all output messages from buffers
+                let allMsgs = [];
+                let totalNew = 0;
+
+                for (const pid of parties) {
+                    sessions[pid].msgs.forEach(m => allMsgs.push(m));
+                    sessions[pid].msgs = []; // Clear buffer
+                }
+
+                if (allMsgs.length === 0) {
+                    log(`Round ${round}: No new messages. Protocol might be done.`);
+                    break;
+                }
+                log(`Round ${round}: Routing ${allMsgs.length} messages...`);
+
+                // Deliver
+                for (const pid of parties) {
+                    const s = sessions[pid];
+                    for (const msg of allMsgs) {
+                        if (msg.from === pid) continue;
+
+                        // Check logic (Broadcast or P2P)
+                        if (!msg.isBroadcast) {
+                            if (!msg.to.includes(pid)) continue;
+                        }
+
+                        // log(`[${pid}] Processing msg from ${msg.from} (${msg.type})...`);
+                        const msgJson = JSON.stringify(msg);
+                        try {
+                            const outStr = GoCGGMP.Update(s.id, msgJson);
+                            if (outStr.startsWith("error:")) {
+                                log(`[${pid}] Update Error: ${outStr}`);
+                                continue;
+                            }
+
+                            const out = JSON.parse(outStr);
+                            if (out && out.length > 0) {
+                                // log(`[${pid}] Produced ${out.length} new messages.`);
+                                sessions[pid].msgs.push(...out);
+                                totalNew += out.length;
+                            }
+                        } catch (e) {
+                            log(`[${pid}] Update Exception: ${e}`);
+                        }
+                    }
+                }
+                round++;
             }
         }
 
@@ -103,8 +198,10 @@
         }
     </script>
 </head>
+
 <body>
-    <h1>TSS WASM Test</h1>
+    <h1>TSS WASM Test (v0.0.8)</h1>
     <pre id="log"></pre>
 </body>
+
 </html>

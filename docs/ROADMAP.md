@@ -17,5 +17,5 @@
 - [x] 1-Round KeyGen (using simpler assumptions)
 
 ### Phase 2: Ecosystem
-- [ ] WebAssembly (WASM) support
+- [x] WebAssembly (WASM) support (v0.0.8)
 - [ ] Mobile bindings (iOS/Android)

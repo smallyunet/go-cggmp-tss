@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.8] - 2026-01-14
+### Added
+- **WASM Support**: Initial WebAssembly bindings for KeyGen and Signing (`cmd/wasm`).
+- **WASM Examples**: Browser-based signing verification in `examples/wasm`.
+- **WASM Improvements**: 
+    - Implemented robust `big.Int` serialization (as strings) to prevent JavaScript precision loss.
+    - Unified message handling in WASM bridge.
+- **1-Round KeyGen check**: Verified 1-round optimizations in WASM environment.
+
 ## [v0.0.5] - 2025-12-22
 ### Added
 - **Polynomial Tests**: Comprehensive test suite for polynomial package (91.7% coverage).
