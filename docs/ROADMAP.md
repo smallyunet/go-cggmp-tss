@@ -18,4 +18,4 @@
 
 ### Phase 2: Ecosystem
 - [x] WebAssembly (WASM) support (v0.0.8)
-- [ ] Mobile bindings (iOS/Android)
+- [x] Mobile bindings (iOS/Android) (v0.0.9)

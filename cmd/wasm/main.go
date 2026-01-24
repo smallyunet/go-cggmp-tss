@@ -27,7 +27,7 @@ var sessions = make(map[string]*SessionWrapper)
 func main() {
 	c := make(chan struct{})
 
-	fmt.Println("Go CGGMP-TSS WASM Initialized (v0.0.8)")
+	fmt.Println("Go CGGMP-TSS WASM Initialized (v0.0.9)")
 
 	// Expose Go functions to JS
 	js.Global().Set("GoCGGMP", map[string]interface{}{

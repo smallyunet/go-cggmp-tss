@@ -75,6 +75,7 @@ For a complete step-by-step guide, please read the **[Usage Documentation](docs/
 ## Documentation
 
 *   [Usage Guide](docs/USAGE.md): Detailed instructions on implementing KeyGen and Signing.
+*   [Mobile Bindings](docs/MOBILE.md): Build iOS/Android bindings using gomobile.
 *   [Roadmap](docs/ROADMAP.md): Development status and future plans.
 
 ## Architecture

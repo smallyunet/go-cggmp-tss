@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.0.9] - 2026-01-24
+### Added
+- **Mobile bindings (experimental)**: A `gomobile`-friendly wrapper in `pkg/mobile` with JSON-based message I/O.
+- **Mobile documentation**: Added `docs/MOBILE.md` with build steps for iOS/Android.
+- **Tests**: End-to-end KeyGen + Sign tests for the mobile wrapper.
+
 ## [v0.0.8] - 2026-01-14
 ### Added
 - **WASM Support**: Initial WebAssembly bindings for KeyGen and Signing (`cmd/wasm`).
