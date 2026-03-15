@@ -18,6 +18,12 @@ type SignParamsInput struct {
 	MsgToSign string          `json:"msgToSign"` // Hex string (hash)
 }
 
+// RefreshParamsInput is the JSON schema to initialize a Refresh session.
+type RefreshParamsInput struct {
+	ParamsInput
+	KeyData json.RawMessage `json:"keyData"` // LocalPartySaveDataDTO
+}
+
 // MessageDTO is the JSON schema for wire messages.
 type MessageDTO struct {
 	From        string   `json:"from"`

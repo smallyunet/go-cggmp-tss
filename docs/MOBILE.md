@@ -32,6 +32,7 @@ gomobile bind -target=ios -o CGGMPTSS.xcframework github.com/smallyu/go-cggmp-ts
 The wrapper exposes a `Session` object.
 
 - `NewKeyGenSession(paramsJSON)`
+- `NewRefreshSession(paramsJSON)`
 - `NewSigningSession(paramsJSON)`
 - `(*Session).TakeMessages()`
 - `(*Session).Update(msgJSON)`
@@ -69,6 +70,19 @@ All message passing is your responsibility (HTTP/gRPC/WebSocket/Libp2p/etc.). Th
 }
 ```
 
+### Params (Refresh)
+
+```json
+{
+  "partyID": "1",
+  "allParties": ["1", "2", "3"],
+  "threshold": 1,
+  "sessionID": "sid-refresh",
+  "oneRoundKeyGen": false,
+  "keyData": { "...": "..." }
+}
+```
+
 ### Wire Message
 
 ```json
@@ -88,4 +102,5 @@ All message passing is your responsibility (HTTP/gRPC/WebSocket/Libp2p/etc.). Th
 2. Each party calls `TakeMessages()` and sends the returned JSON messages to other parties.
 3. When a party receives a message, call `Update(msgJSON)`.
 4. Repeat until `Result()` returns a non-empty JSON string.
-5. Persist the returned KeyGen result JSON and embed it into Signing params as `keyData`.
+5. Persist the returned KeyGen result JSON and embed it into Refresh or Signing params as `keyData`.
+6. After Refresh completes, persist the refreshed key JSON and use it for subsequent Signing sessions.

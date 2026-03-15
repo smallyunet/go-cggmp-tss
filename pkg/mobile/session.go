@@ -10,6 +10,7 @@ import (
 
 	"github.com/smallyu/go-cggmp-tss/internal/crypto/paillier"
 	"github.com/smallyu/go-cggmp-tss/internal/protocol/keygen"
+	"github.com/smallyu/go-cggmp-tss/internal/protocol/refresh"
 	"github.com/smallyu/go-cggmp-tss/internal/protocol/sign"
 	"github.com/smallyu/go-cggmp-tss/pkg/tss"
 )
@@ -25,8 +26,9 @@ func VersionString() string {
 type protocolType string
 
 const (
-	protocolKeyGen protocolType = "keygen"
-	protocolSign   protocolType = "sign"
+	protocolKeyGen  protocolType = "keygen"
+	protocolRefresh protocolType = "refresh"
+	protocolSign    protocolType = "sign"
 )
 
 // Session is a gomobile-friendly wrapper over a protocol state machine.
@@ -93,6 +95,35 @@ func NewSigningSession(paramsJSON string) (*Session, error) {
 
 	return &Session{
 		protocol: protocolSign,
+		sm:       sm,
+		pending:  outMsgs,
+	}, nil
+}
+
+// NewRefreshSession starts a Refresh session.
+func NewRefreshSession(paramsJSON string) (*Session, error) {
+	var input RefreshParamsInput
+	if err := json.Unmarshal([]byte(paramsJSON), &input); err != nil {
+		return nil, fmt.Errorf("invalid params json: %w", err)
+	}
+
+	params, err := cleanParams(input.ParamsInput)
+	if err != nil {
+		return nil, err
+	}
+
+	keyData, err := unmarshalKeyData(input.KeyData)
+	if err != nil {
+		return nil, fmt.Errorf("invalid keyData: %w", err)
+	}
+
+	sm, outMsgs, err := refresh.NewStateMachine(params, keyData)
+	if err != nil {
+		return nil, fmt.Errorf("create refresh state machine: %w", err)
+	}
+
+	return &Session{
+		protocol: protocolRefresh,
 		sm:       sm,
 		pending:  outMsgs,
 	}, nil
@@ -220,6 +251,15 @@ func (s *Session) decodeMessage(msgJSON []byte) (tss.Message, error) {
 	switch s.protocol {
 	case protocolKeyGen:
 		return &keygen.KeyGenMessage{
+			FromParty:  fromParty,
+			ToParties:  toParties,
+			IsBcast:    dto.IsBroadcast,
+			Data:       dataBytes,
+			TypeString: dto.Type,
+			RoundNum:   dto.Round,
+		}, nil
+	case protocolRefresh:
+		return &refresh.RefreshMessage{
 			FromParty:  fromParty,
 			ToParties:  toParties,
 			IsBcast:    dto.IsBroadcast,

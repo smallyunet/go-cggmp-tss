@@ -19,3 +19,16 @@
 ### Phase 2: Ecosystem
 - [x] WebAssembly (WASM) support (v0.0.8)
 - [x] Mobile bindings (iOS/Android) (v0.0.9)
+
+## Next Release Focus (v0.1.0)
+
+### Client Binding Parity
+- [x] Key Refresh support in mobile bindings
+- [x] Key Refresh support in WASM bindings
+
+### API Hardening
+- [ ] Reduce reliance on `internal/...` imports in user-facing examples and docs
+- [ ] Expand cross-platform protocol parity tests for bindings
+
+### Documentation
+- [ ] Add end-to-end binding examples that cover KeyGen -> Refresh -> Sign

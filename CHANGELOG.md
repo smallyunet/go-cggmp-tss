@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- **Refresh bindings**: Added Key Refresh session support to both `pkg/mobile` and `cmd/wasm` wrappers.
+- **Mobile tests**: Added an end-to-end mobile wrapper flow covering KeyGen -> Refresh -> Sign.
+
+### Changed
+- **Roadmap**: Defined the `v0.1.0` focus around client binding parity, API hardening, and end-to-end examples.
+
 ## [v0.0.9] - 2026-01-24
 ### Added
 - **Mobile bindings (experimental)**: A `gomobile`-friendly wrapper in `pkg/mobile` with JSON-based message I/O.

@@ -11,17 +11,18 @@ import (
 
 	"github.com/smallyu/go-cggmp-tss/internal/crypto/paillier"
 	"github.com/smallyu/go-cggmp-tss/internal/protocol/keygen"
+	"github.com/smallyu/go-cggmp-tss/internal/protocol/refresh"
 	"github.com/smallyu/go-cggmp-tss/internal/protocol/sign"
 	"github.com/smallyu/go-cggmp-tss/pkg/tss"
 )
 
-// SessionWrapper holds the state machine and its type
+// SessionWrapper holds the state machine and its type.
 type SessionWrapper struct {
 	SM   tss.StateMachine
-	Type string // "keygen", "sign"
+	Type string // "keygen", "refresh", "sign"
 }
 
-// Global map to store active state machines
+// Global map to store active state machines.
 var sessions = make(map[string]*SessionWrapper)
 
 func main() {
@@ -32,6 +33,7 @@ func main() {
 	// Expose Go functions to JS
 	js.Global().Set("GoCGGMP", map[string]interface{}{
 		"NewKeyGen":  js.FuncOf(NewKeyGen),
+		"NewRefresh": js.FuncOf(NewRefresh),
 		"NewSigning": js.FuncOf(NewSigning),
 		"Update":     js.FuncOf(Update),
 		"Result":     js.FuncOf(Result),
@@ -54,6 +56,11 @@ type SignParamsInput struct {
 	ParamsInput
 	KeyData   json.RawMessage `json:"keyData"`   // LocalPartySaveDataDTO
 	MsgToSign string          `json:"msgToSign"` // Hex string
+}
+
+type RefreshParamsInput struct {
+	ParamsInput
+	KeyData json.RawMessage `json:"keyData"` // LocalPartySaveDataDTO
 }
 
 // LocalPartySaveDataDTO uses strings for big.Int to prevent JS precision loss
@@ -121,6 +128,41 @@ func NewKeyGen(this js.Value, args []js.Value) interface{} {
 
 	sessionHandle := fmt.Sprintf("%s-%s", input.PartyID, input.SessionID)
 	sessions[sessionHandle] = &SessionWrapper{SM: sm, Type: "keygen"}
+
+	return makeResponse(sessionHandle, outMsgs)
+}
+
+// --- Signing ---
+
+func NewRefresh(this js.Value, args []js.Value) interface{} {
+	if len(args) != 1 {
+		return "error: expected 1 argument (jsonParams)"
+	}
+
+	paramsJSON := args[0].String()
+	var input RefreshParamsInput
+	err := json.Unmarshal([]byte(paramsJSON), &input)
+	if err != nil {
+		return fmt.Sprintf("error: invalid json: %v", err)
+	}
+
+	params, err := cleanParams(input.ParamsInput)
+	if err != nil {
+		return fmt.Sprintf("error: %v", err)
+	}
+
+	keyData, err := unmarshalKeyData(input.KeyData)
+	if err != nil {
+		return fmt.Sprintf("error: invalid keyData: %v", err)
+	}
+
+	sm, outMsgs, err := refresh.NewStateMachine(params, keyData)
+	if err != nil {
+		return fmt.Sprintf("error: failed to create refresh state machine: %v", err)
+	}
+
+	sessionHandle := fmt.Sprintf("%s-%s", input.PartyID, input.SessionID)
+	sessions[sessionHandle] = &SessionWrapper{SM: sm, Type: "refresh"}
 
 	return makeResponse(sessionHandle, outMsgs)
 }
@@ -212,7 +254,8 @@ func Update(this js.Value, args []js.Value) interface{} {
 
 	// Construct concrete message based on session type
 	var realMsg tss.Message
-	if wrapper.Type == "keygen" {
+	switch wrapper.Type {
+	case "keygen":
 		realMsg = &keygen.KeyGenMessage{
 			FromParty:  fromParty,
 			ToParties:  toParties,
@@ -221,8 +264,16 @@ func Update(this js.Value, args []js.Value) interface{} {
 			TypeString: dto.Type,
 			RoundNum:   dto.Round,
 		}
-	} else {
-		// sign
+	case "refresh":
+		realMsg = &refresh.RefreshMessage{
+			FromParty:  fromParty,
+			ToParties:  toParties,
+			IsBcast:    dto.IsBroadcast,
+			Data:       dataBytes,
+			TypeString: dto.Type,
+			RoundNum:   dto.Round,
+		}
+	case "sign":
 		realMsg = &sign.SignMessage{
 			FromParty:  fromParty,
 			ToParties:  toParties,
@@ -231,6 +282,8 @@ func Update(this js.Value, args []js.Value) interface{} {
 			TypeString: dto.Type,
 			RoundNum:   dto.Round,
 		}
+	default:
+		return fmt.Sprintf("error: unsupported session type: %s", wrapper.Type)
 	}
 
 	nextSm, outMsgs, err := wrapper.SM.Update(realMsg)
