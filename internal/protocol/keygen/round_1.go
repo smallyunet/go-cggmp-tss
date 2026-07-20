@@ -48,13 +48,11 @@ func (s *state) round1() (tss.StateMachine, []tss.Message, error) {
 	s.tempData["vss_commitments"] = vssCommitments
 
 	// 4. Create Commitment
-	// We commit to (PaillierPK, VSS_Commitments)
-	// Serialize data for commitment
-	// Format: PaillierN || VSS_X0 || VSS_Y0 || ...
-	var commitData []byte
-	commitData = append(commitData, paillierSk.PublicKey.N.Bytes()...)
-	for _, coord := range vssCommitments {
-		commitData = append(commitData, coord.Bytes()...)
+	// We commit to a canonical fixed-width encoding of
+	// PaillierN || VSS_X0 || VSS_Y0 || ...
+	commitData, err := encodeCommitmentData(paillierSk.PublicKey.N, vssCommitments)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to encode commitment data: %w", err)
 	}
 
 	// Create commitment: C = Hash(salt, data)
@@ -65,16 +63,17 @@ func (s *state) round1() (tss.StateMachine, []tss.Message, error) {
 
 	// Store the decommitment (D) for Round 2
 	s.tempData["round1_decommit"] = comm.D
+	s.tempData["round1_commit_data"] = commitData
 
 	// 5. Create the Broadcast Message
 	// The payload is the commitment hash C
 	msg := &KeyGenMessage{
-		FromParty:   s.params.PartyID,
-		ToParties:   nil, // Broadcast
-		IsBcast:     true,
-		Data:        comm.C,
-		TypeString:  "KeyGenRound1",
-		RoundNum:    1,
+		FromParty:  s.params.PartyID,
+		ToParties:  nil, // Broadcast
+		IsBcast:    true,
+		Data:       comm.C,
+		TypeString: "KeyGenRound1",
+		RoundNum:   1,
 	}
 
 	return s, []tss.Message{msg}, nil
