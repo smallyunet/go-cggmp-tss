@@ -14,8 +14,8 @@ var (
 
 // PublicKey represents a Paillier public key (n).
 type PublicKey struct {
-	N    *big.Int // Modulus n = p * q
-	N2   *big.Int // n^2, cached for performance
+	N  *big.Int // Modulus n = p * q
+	N2 *big.Int // n^2, cached for performance
 }
 
 // PrivateKey represents a Paillier private key (lambda, mu).
@@ -58,7 +58,7 @@ func GenerateKey(random io.Reader, bits int) (*PrivateKey, error) {
 	// 3. Compute lambda = lcm(p-1, q-1) = (p-1)*(q-1) / gcd(p-1, q-1)
 	pMinus1 := new(big.Int).Sub(p, one)
 	qMinus1 := new(big.Int).Sub(q, one)
-	
+
 	gcd := new(big.Int).GCD(nil, nil, pMinus1, qMinus1)
 	lambda := new(big.Int).Mul(pMinus1, qMinus1)
 	lambda.Div(lambda, gcd)
@@ -95,16 +95,16 @@ func (pk *PublicKey) Encrypt(m *big.Int) (*big.Int, *big.Int, error) {
 	}
 	// Ensure r != 0
 	if r.Sign() == 0 {
-		r = big.NewInt(1) 
+		r = big.NewInt(1)
 	}
 
 	// c = (1 + n*m) * r^n mod n^2
 	// Optimization: (1 + n*m) mod n^2 is just (1 + n*m) since m < n
-	
+
 	// gm = 1 + n*m
 	gm := new(big.Int).Mul(pk.N, m)
 	gm.Add(gm, one)
-	
+
 	// rn = r^n mod n^2
 	rn := new(big.Int).Exp(r, pk.N, pk.N2)
 
@@ -182,12 +182,12 @@ func (pk *PublicKey) EncryptWithNonce(m, r *big.Int) (*big.Int, error) {
 	if m.Sign() == -1 || m.Cmp(pk.N) >= 0 {
 		return nil, errors.New("paillier: message m must be in range [0, n)")
 	}
-	
+
 	// c = (1 + n*m) * r^n mod n^2
-	
+
 	gm := new(big.Int).Mul(pk.N, m)
 	gm.Add(gm, one)
-	
+
 	rn := new(big.Int).Exp(r, pk.N, pk.N2)
 
 	c := new(big.Int).Mul(gm, rn)

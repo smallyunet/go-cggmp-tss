@@ -13,7 +13,9 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 	// 1. Process Round 1 Messages
 	peerCommitments := make(map[string][]byte)
 	for id, msgs := range s.receivedMsgs {
-		if len(msgs) == 0 { continue }
+		if len(msgs) == 0 {
+			continue
+		}
 		peerCommitments[id] = msgs[0].Payload()
 	}
 	s.tempData["peer_commitments"] = peerCommitments
@@ -26,7 +28,7 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 	if !ok {
 		return nil, nil, fmt.Errorf("missing decommitment salt")
 	}
-	
+
 	paillierPk := s.saveData.PaillierPk
 	vssCommitments, ok := s.tempData["vss_commitments"].([]*big.Int)
 	if !ok {
@@ -37,12 +39,12 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 		PaillierN []byte
 		VSS       []*big.Int
 	}
-	
+
 	cData := CommitData{
 		PaillierN: paillierPk.N.Bytes(),
 		VSS:       vssCommitments,
 	}
-	
+
 	decommitData, err := json.Marshal(cData)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to marshal decommit data: %w", err)
@@ -53,12 +55,12 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 	copy(payload[len(decommitSalt):], decommitData)
 
 	broadcastMsg := &RefreshMessage{
-		FromParty:   s.params.PartyID,
-		ToParties:   nil,
-		IsBcast:     true,
-		Data:        payload,
-		TypeString:  "RefreshRound2_Decommit",
-		RoundNum:    2,
+		FromParty:  s.params.PartyID,
+		ToParties:  nil,
+		IsBcast:    true,
+		Data:       payload,
+		TypeString: "RefreshRound2_Decommit",
+		RoundNum:   2,
 	}
 	outMsgs = append(outMsgs, broadcastMsg)
 
@@ -77,12 +79,12 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 		share := poly.Evaluate(x)
 
 		p2pMsg := &RefreshMessage{
-			FromParty:   s.params.PartyID,
-			ToParties:   []tss.PartyID{peer},
-			IsBcast:     false,
-			Data:        share.Bytes(),
-			TypeString:  "RefreshRound2_Share",
-			RoundNum:    2,
+			FromParty:  s.params.PartyID,
+			ToParties:  []tss.PartyID{peer},
+			IsBcast:    false,
+			Data:       share.Bytes(),
+			TypeString: "RefreshRound2_Share",
+			RoundNum:   2,
 		}
 		outMsgs = append(outMsgs, p2pMsg)
 	}

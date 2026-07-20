@@ -63,9 +63,9 @@ func TestBatchSign(t *testing.T) {
 					}
 				}
 
-				next, newOut, err := sms[i].Update(msg)
-				if err != nil {
-					t.Fatalf("Party %d failed: %v", i, err)
+				next, newOut, updateErr := sms[i].Update(msg)
+				if updateErr != nil {
+					t.Fatalf("Party %d failed: %v", i, updateErr)
 				}
 				sms[i] = next
 				if newOut != nil {

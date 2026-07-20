@@ -1,12 +1,12 @@
 package schnorr
 
 import (
-crand "crypto/rand"
-"crypto/sha256"
-"errors"
-"math/big"
+	crand "crypto/rand"
+	"crypto/sha256"
+	"errors"
+	"math/big"
 
-"github.com/decred/dcrd/dcrec/secp256k1/v4"
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 )
 
 // Proof represents a Schnorr proof of knowledge of a discrete logarithm.
@@ -71,7 +71,7 @@ func (p *Proof) Verify(X *secp256k1.JacobianPoint) bool {
 
 	// 2. Verify R = s*G - e*X
 	// Equivalent to checking s*G = R + e*X
-	
+
 	// LHS = s * G
 	var lhs secp256k1.JacobianPoint
 	sScalar := new(secp256k1.ModNScalar)
@@ -83,7 +83,7 @@ func (p *Proof) Verify(X *secp256k1.JacobianPoint) bool {
 	eScalar := new(secp256k1.ModNScalar)
 	eScalar.SetByteSlice(e.Bytes())
 	secp256k1.ScalarMultNonConst(eScalar, X, &eX)
-	
+
 	var rhs secp256k1.JacobianPoint
 	secp256k1.AddNonConst(p.R, &eX, &rhs)
 
@@ -98,23 +98,23 @@ func (p *Proof) Verify(X *secp256k1.JacobianPoint) bool {
 // challenge computes H(X, R) mod n
 func challenge(X, R *secp256k1.JacobianPoint) *big.Int {
 	curve := secp256k1.S256()
-	
+
 	// Serialize points
 	X.ToAffine()
 	R.ToAffine()
-	
+
 	// Use compressed serialization for uniqueness
 	// Note: In a real implementation, we should use a canonical serialization format.
 	// Here we simply hash the coordinates.
-	
+
 	h := sha256.New()
 	h.Write(X.X.Bytes()[:])
 	h.Write(X.Y.Bytes()[:])
 	h.Write(R.X.Bytes()[:])
 	h.Write(R.Y.Bytes()[:])
-	
+
 	hashBytes := h.Sum(nil)
-	
+
 	e := new(big.Int).SetBytes(hashBytes)
 	e.Mod(e, curve.N)
 	return e

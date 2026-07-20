@@ -22,8 +22,8 @@ type LocalPartySaveData struct {
 	// Xi removed (duplicate)
 
 	// Paillier Keys
-	PaillierSk *paillier.PrivateKey
-	PaillierPk *paillier.PublicKey
+	PaillierSk      *paillier.PrivateKey
+	PaillierPk      *paillier.PublicKey
 	PeerPaillierPks map[string]*paillier.PublicKey
 
 	// Our share of the secret key (u_i)
@@ -43,12 +43,12 @@ type LocalPartySaveData struct {
 
 // KeyGenMessage is a concrete implementation of tss.Message for KeyGen
 type KeyGenMessage struct {
-	FromParty   tss.PartyID
-	ToParties   []tss.PartyID
-	IsBcast     bool
-	Data        []byte
-	TypeString  string
-	RoundNum    uint32
+	FromParty  tss.PartyID
+	ToParties  []tss.PartyID
+	IsBcast    bool
+	Data       []byte
+	TypeString string
+	RoundNum   uint32
 }
 
 func (m *KeyGenMessage) Type() string {

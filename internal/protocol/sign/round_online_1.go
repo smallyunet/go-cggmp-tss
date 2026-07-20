@@ -19,7 +19,7 @@ func (s *state) roundOnline1() (tss.StateMachine, []tss.Message, error) {
 
 	// Compute s_i = m * k_i + r * sigma_i
 	m := new(big.Int).SetBytes(s.msgToSign)
-	
+
 	ki := s.preSignature.Ki
 	sigma_i := s.preSignature.SigmaI
 	r := s.preSignature.R

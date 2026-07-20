@@ -48,10 +48,12 @@ func TestSignE2E(t *testing.T) {
 			allMsgs = append(allMsgs, msgs...)
 		}
 		newOutMsgs := make([][]tss.Message, 3)
-		
+
 		for i := 0; i < 3; i++ {
 			for _, msg := range allMsgs {
-				if msg.From().ID() == parties[i].ID() { continue }
+				if msg.From().ID() == parties[i].ID() {
+					continue
+				}
 				if !msg.IsBroadcast() {
 					found := false
 					for _, dest := range msg.To() {
@@ -60,12 +62,14 @@ func TestSignE2E(t *testing.T) {
 							break
 						}
 					}
-					if !found { continue }
+					if !found {
+						continue
+					}
 				}
-				
-				next, newOut, err := sms[i].Update(msg)
-				if err != nil {
-					t.Fatalf("Party %d failed: %v", i, err)
+
+				next, newOut, updateErr := sms[i].Update(msg)
+				if updateErr != nil {
+					t.Fatalf("Party %d failed: %v", i, updateErr)
 				}
 				sms[i] = next
 				if newOut != nil {
@@ -94,10 +98,10 @@ func TestSignE2E(t *testing.T) {
 	// 2. Run Sign
 	msg := []byte("hello world")
 	hash := sha256.Sum256(msg)
-	
+
 	signSMs := make([]tss.StateMachine, 3)
 	signOutMsgs := make([][]tss.Message, 3)
-	
+
 	for i := 0; i < 3; i++ {
 		params := &tss.Parameters{
 			PartyID:   parties[i],

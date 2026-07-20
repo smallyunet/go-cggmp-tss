@@ -1,12 +1,12 @@
 package mta
 
 import (
-"crypto/rand"
-"math/big"
-"testing"
+	"crypto/rand"
+	"math/big"
+	"testing"
 
-"github.com/decred/dcrd/dcrec/secp256k1/v4"
-"github.com/smallyu/go-cggmp-tss/internal/crypto/paillier"
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
+	"github.com/smallyu/go-cggmp-tss/internal/crypto/paillier"
 )
 
 func TestMtaProof(t *testing.T) {

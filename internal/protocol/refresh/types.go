@@ -6,12 +6,12 @@ import (
 
 // RefreshMessage is the concrete message type for Key Refresh.
 type RefreshMessage struct {
-	FromParty   tss.PartyID
-	ToParties   []tss.PartyID
-	IsBcast     bool
-	Data        []byte
-	TypeString  string
-	RoundNum    uint32
+	FromParty  tss.PartyID
+	ToParties  []tss.PartyID
+	IsBcast    bool
+	Data       []byte
+	TypeString string
+	RoundNum   uint32
 }
 
 func (m *RefreshMessage) Type() string {

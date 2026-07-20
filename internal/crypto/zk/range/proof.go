@@ -9,10 +9,6 @@ import (
 	"github.com/smallyu/go-cggmp-tss/internal/crypto/paillier"
 )
 
-var (
-	one = big.NewInt(1)
-)
-
 // Proof represents a Zero-Knowledge Range Proof.
 // It proves that a value x encrypted in a Paillier ciphertext C is within a specific range [0, 2^bits].
 //
@@ -91,7 +87,7 @@ func (p *Proof) Verify(pk *paillier.PublicKey, C *big.Int, bits int) bool {
 
 	// 2. Verify encryption relation
 	// E(z1, z2) ?= A * C^e mod N^2
-	
+
 	// LHS = E(z1, z2)
 	lhs, err := pk.EncryptWithR(p.Z1, p.Z2)
 	if err != nil {

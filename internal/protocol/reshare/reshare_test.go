@@ -71,9 +71,9 @@ func TestRefreshE2E(t *testing.T) {
 				}
 
 				// t.Logf("Party %d processing message from %s (Round %d)", i, msg.From().ID(), msg.RoundNumber())
-				next, newOut, err := sms[i].Update(msg)
-				if err != nil {
-					t.Fatalf("Party %d failed: %v", i, err)
+				next, newOut, updateErr := sms[i].Update(msg)
+				if updateErr != nil {
+					t.Fatalf("Party %d failed: %v", i, updateErr)
 				}
 				// if next != sms[i] {
 				// 	t.Logf("Party %d advanced to %s", i, next.Details())

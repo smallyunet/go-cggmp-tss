@@ -1,9 +1,9 @@
 package commitment
 
 import (
-"bytes"
-"math/big"
-"testing"
+	"bytes"
+	"math/big"
+	"testing"
 )
 
 func TestCommitment(t *testing.T) {

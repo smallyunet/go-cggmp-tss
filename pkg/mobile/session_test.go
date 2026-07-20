@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"testing"
 )
 
@@ -245,52 +244,6 @@ func newRefreshSession(t *testing.T, party string, all []string, sessionID strin
 	return s
 }
 
-func runUntilRefreshDone(t *testing.T, s1, s2 *Session, wire []testWireMessage) (string, string) {
-	steps := 0
-	for len(wire) > 0 {
-		if steps > 10_000 {
-			t.Fatal("too many steps (possible deadlock)")
-		}
-		steps++
-
-		item := wire[0]
-		wire = wire[1:]
-
-		var target *Session
-		switch item.ToParty {
-		case "1":
-			target = s1
-		case "2":
-			target = s2
-		default:
-			t.Fatalf("unknown target party %q", item.ToParty)
-		}
-
-		outJSON, err := target.Update(item.JSON)
-		if err != nil {
-			t.Fatalf("Update party %s: %v", item.ToParty, err)
-		}
-
-		wire = append(wire, routeOutgoing(t, outJSON)...)
-
-		res1, err := s1.Result()
-		if err == nil && res1 != "" {
-			res2, err := s2.Result()
-			if err == nil && res2 != "" {
-				return res1, res2
-			}
-		}
-	}
-
-	res1, err1 := s1.Result()
-	res2, err2 := s2.Result()
-	if err1 != nil || err2 != nil || res1 == "" || res2 == "" {
-		t.Fatalf("refresh not finished: res1=%v err1=%v res2=%v err2=%v", res1 != "", err1, res2 != "", err2)
-	}
-
-	return res1, res2
-}
-
 func runUntilDoneMulti(t *testing.T, sessions map[string]*Session, allWire []testWireMessage, parties []string, protocol string, validate func(*testing.T, string)) map[string]string {
 	steps := 0
 	wire := allWire
@@ -478,5 +431,5 @@ func routeOutgoingForParties(t *testing.T, outJSON string, parties []string) []t
 
 func (m MessageDTO) String() string {
 	b, _ := json.Marshal(m)
-	return fmt.Sprintf("%s", b)
+	return string(b)
 }

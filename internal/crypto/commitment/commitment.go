@@ -1,9 +1,9 @@
 package commitment
 
 import (
-"crypto/rand"
-"crypto/sha256"
-"math/big"
+	"crypto/rand"
+	"crypto/sha256"
+	"math/big"
 )
 
 // Commitment represents the output of a commitment scheme.

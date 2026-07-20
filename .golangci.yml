@@ -21,6 +21,10 @@ linters-settings:
     check-type-assertions: true
   govet:
     enable-all: true
+    disable:
+      # Field order is part of the readability and wire-format contract for
+      # several exported protocol DTOs; do not reorder it for pointer packing.
+      - fieldalignment
 
 issues:
   exclude-rules:

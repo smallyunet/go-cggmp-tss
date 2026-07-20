@@ -8,14 +8,14 @@ import (
 )
 
 type state struct {
-	params   *tss.Parameters
-	keyData  *keygen.LocalPartySaveData
-	msgToSign []byte // The message (hash) to sign. Nil if PreSign mode.
+	params       *tss.Parameters
+	keyData      *keygen.LocalPartySaveData
+	msgToSign    []byte        // The message (hash) to sign. Nil if PreSign mode.
 	preSignature *PreSignature // Populated in Online mode
 
 	round    int
 	tempData map[string]interface{}
-	
+
 	// Messages received in the current round
 	receivedMsgs map[string][]tss.Message
 }
@@ -74,14 +74,14 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 	if s.receivedMsgs == nil {
 		s.receivedMsgs = make(map[string][]tss.Message)
 	}
-	
+
 	// Check for duplicates
 	for _, existing := range s.receivedMsgs[senderID] {
 		if existing.Type() == msg.Type() {
 			return nil, nil, fmt.Errorf("duplicate message type %s from party %s", msg.Type(), senderID)
 		}
 	}
-	
+
 	s.receivedMsgs[senderID] = append(s.receivedMsgs[senderID], msg)
 
 	// Check completion
@@ -89,11 +89,11 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 	// Actually, we need messages from all OTHER parties in the signing set.
 	// The `params.Parties` should contain the subset of parties participating in signing.
 	// Size of `params.Parties` should be >= t+1.
-	
+
 	if len(s.receivedMsgs) < len(s.params.Parties)-1 {
 		return s, nil, nil
 	}
-	
+
 	// Check if we have all expected messages per peer
 	expectedCount := 0
 	switch s.round {
@@ -108,7 +108,7 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 	case 4:
 		expectedCount = 1 // We expect s_j from everyone in Round 4
 	}
-	
+
 	for _, msgs := range s.receivedMsgs {
 		if len(msgs) < expectedCount {
 			return s, nil, nil

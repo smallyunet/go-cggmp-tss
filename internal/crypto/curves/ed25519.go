@@ -25,7 +25,7 @@ func (c *Ed25519Curve) NewScalar() (Scalar, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	s, err := edwards25519.NewScalar().SetUniformBytes(b[:])
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (c *Ed25519Curve) NewScalarFromBigInt(n *big.Int) Scalar {
 	// edwards25519.Scalar doesn't have SetBigInt directly, need bytes.
 	// We need to be careful with endianness. edwards25519 uses little-endian.
 	// big.Int.Bytes() is big-endian.
-	
+
 	bytes := n.Bytes()
 	// Pad to 32 bytes
 	if len(bytes) > 32 {
@@ -45,13 +45,13 @@ func (c *Ed25519Curve) NewScalarFromBigInt(n *big.Int) Scalar {
 		n = new(big.Int).Mod(n, c.Order())
 		bytes = n.Bytes()
 	}
-	
+
 	var buf [32]byte
 	// Reverse bytes for little-endian
 	for i := 0; i < len(bytes); i++ {
 		buf[len(bytes)-1-i] = bytes[i]
 	}
-	
+
 	s, _ := edwards25519.NewScalar().SetCanonicalBytes(buf[:])
 	return &Ed25519Scalar{s: s}
 }
@@ -89,14 +89,18 @@ func (s *Ed25519Scalar) BigInt() *big.Int {
 
 func (s *Ed25519Scalar) Add(other Scalar) Scalar {
 	o, ok := other.(*Ed25519Scalar)
-	if !ok { panic("type mismatch") }
+	if !ok {
+		panic("type mismatch")
+	}
 	res := edwards25519.NewScalar().Add(s.s, o.s)
 	return &Ed25519Scalar{s: res}
 }
 
 func (s *Ed25519Scalar) Mul(other Scalar) Scalar {
 	o, ok := other.(*Ed25519Scalar)
-	if !ok { panic("type mismatch") }
+	if !ok {
+		panic("type mismatch")
+	}
 	res := edwards25519.NewScalar().Multiply(s.s, o.s)
 	return &Ed25519Scalar{s: res}
 }
@@ -117,14 +121,18 @@ func (p *Ed25519Point) Bytes() []byte {
 
 func (p *Ed25519Point) Add(other Point) Point {
 	o, ok := other.(*Ed25519Point)
-	if !ok { panic("type mismatch") }
+	if !ok {
+		panic("type mismatch")
+	}
 	res := edwards25519.NewIdentityPoint().Add(p.p, o.p)
 	return &Ed25519Point{p: res}
 }
 
 func (p *Ed25519Point) ScalarMult(scalar Scalar) Point {
 	s, ok := scalar.(*Ed25519Scalar)
-	if !ok { panic("type mismatch") }
+	if !ok {
+		panic("type mismatch")
+	}
 	res := edwards25519.NewIdentityPoint().ScalarMult(s.s, p.p)
 	return &Ed25519Point{p: res}
 }

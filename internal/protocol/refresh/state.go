@@ -65,7 +65,7 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 	// Round 2: 1 Broadcast (Decommit) + 1 P2P (Share)
 	// Round 3: 1 Broadcast (Proof)
 	// Round 4: 1 Broadcast (Schnorr)
-	
+
 	expectedCount := 0
 	switch s.round {
 	case 1:
@@ -77,13 +77,13 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 		// Wait, KeyGen Round 3 receives Decommitments?
 		// Let's check KeyGen structure.
 	}
-	
+
 	// In KeyGen:
 	// Round 1: Broadcast Commit
 	// Round 2: Broadcast Decommit + P2P Share
 	// Round 3: Broadcast Paillier Proof (Wait, KeyGen Round 3 is VSS Verify?)
 	// Let's check KeyGen Round 3.
-	
+
 	// Assuming same structure as KeyGen for now.
 	if s.round == 3 {
 		expectedCount = 1

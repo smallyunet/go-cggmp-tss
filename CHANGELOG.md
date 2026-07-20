@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.0.11] - 2026-07-20
+### Fixed
+- **CI linting**: Resolved formatting, unchecked type assertions, unused code, shadowed variables, and ineffectual assignments reported by the pinned linter.
+- **Signing state validation**: Return explicit errors when required MtA temporary values are missing instead of panicking on unchecked type assertions.
+- **Lint stability**: Pin `golangci-lint` to `v1.64.8` and exclude field-layout advice that would reorder public protocol DTOs without changing behavior.
+
 ## [v0.0.10] - 2026-07-20
 ### Added
 - **Refresh bindings**: Added Key Refresh session support to both `pkg/mobile` and `cmd/wasm` wrappers.

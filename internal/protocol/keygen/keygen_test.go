@@ -78,7 +78,7 @@ func TestRound2Transition(t *testing.T) {
 	}
 
 	// Simulate receiving Round 1 messages from p2 and p3
-	// In reality, these would be valid commitments, but for this test, 
+	// In reality, these would be valid commitments, but for this test,
 	// the state machine only checks existence and round number currently.
 	msg2 := &KeyGenMessage{
 		FromParty:  p2,
@@ -194,7 +194,7 @@ func TestE2E(t *testing.T) {
 		for _, msgs := range outMsgs {
 			allMsgs = append(allMsgs, msgs...)
 		}
-		
+
 		// Clear output buffers
 		outMsgs = make([][]tss.Message, 3)
 
@@ -234,7 +234,7 @@ func TestE2E(t *testing.T) {
 
 	// Round 1 -> 2
 	route(1)
-	
+
 	// Round 2 -> 3
 	route(2)
 
@@ -260,11 +260,11 @@ func TestE2E(t *testing.T) {
 		}
 		t.Logf("Party %d finished. PubKey: (%s, %s)", i, data.PublicKeyX, data.PublicKeyY)
 	}
-	
+
 	// Verify all parties have same public key
 	pkX := sms[0].Result().(*LocalPartySaveData).PublicKeyX
 	pkY := sms[0].Result().(*LocalPartySaveData).PublicKeyY
-	
+
 	for i := 1; i < 3; i++ {
 		d := sms[i].Result().(*LocalPartySaveData)
 		if d.PublicKeyX.Cmp(pkX) != 0 || d.PublicKeyY.Cmp(pkY) != 0 {

@@ -249,7 +249,7 @@ func BenchmarkOnlineSign3of3(b *testing.B) {
 		}
 
 		// Online phase is just 1 round
-		onlineSMs, onlineOutMsgs = route(parties, onlineSMs, onlineOutMsgs)
+		onlineSMs, _ = route(parties, onlineSMs, onlineOutMsgs)
 
 		for j := 0; j < 3; j++ {
 			if onlineSMs[j].Result() == nil {

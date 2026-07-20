@@ -2,6 +2,7 @@ package sign
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 
 	"github.com/smallyu/go-cggmp-tss/internal/crypto/curves"
@@ -18,12 +19,14 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 
 	// 1. Process Round 2 Messages (MtA Responses)
 	// We expect 1 message from each peer containing C_delta, C_sigma
-	
+
 	alphas := make(map[string]*big.Int)
 	mus := make(map[string]*big.Int)
-	
+
 	for id, msgs := range s.receivedMsgs {
-		if len(msgs) == 0 { continue }
+		if len(msgs) == 0 {
+			continue
+		}
 		var payload Round2Payload
 		if err := json.Unmarshal(msgs[0].Payload(), &payload); err != nil {
 			return nil, nil, err
@@ -37,7 +40,7 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 				break
 			}
 		}
-		
+
 		// Decrypt C_delta to get alpha_ij
 		// This is response to MY EncK_i. So I use MY Secret Key.
 		alpha, err := s.keyData.PaillierSk.Decrypt(payload.C_delta)
@@ -45,7 +48,7 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 			return nil, nil, tss.NewBlame(culprit, "failed to decrypt alpha", err)
 		}
 		alphas[id] = alpha
-		
+
 		// Decrypt C_sigma to get mu_ij
 		mu, err := s.keyData.PaillierSk.Decrypt(payload.C_sigma)
 		if err != nil {
@@ -57,49 +60,72 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 	// 2. Compute delta_i and sigma_i
 	// delta_i = k_i * gamma_i + sum(alpha_ij) - sum(beta_ji)
 	// sigma_i = k_i * w_i + sum(mu_ij) - sum(nu_ji)
-	
-	ki := s.tempData["ki"].(*big.Int)
-	gammai := s.tempData["gammai"].(*big.Int)
-	wi := s.tempData["wi"].(*big.Int)
-	
+
+	ki, ok := s.tempData["ki"].(*big.Int)
+	if !ok || ki == nil {
+		return nil, nil, fmt.Errorf("missing signing nonce")
+	}
+	gammai, ok := s.tempData["gammai"].(*big.Int)
+	if !ok || gammai == nil {
+		return nil, nil, fmt.Errorf("missing gamma scalar")
+	}
+	wi, ok := s.tempData["wi"].(*big.Int)
+	if !ok || wi == nil {
+		return nil, nil, fmt.Errorf("missing weighted key share")
+	}
+
 	// k_i * gamma_i
 	delta_i := new(big.Int).Mul(ki, gammai)
 	delta_i.Mod(delta_i, N)
-	
+
 	// k_i * w_i
 	sigma_i := new(big.Int).Mul(ki, wi)
 	sigma_i.Mod(sigma_i, N)
-	
-	betas := s.tempData["betas"].(map[string]*big.Int)
-	nus := s.tempData["nus"].(map[string]*big.Int)
-	
+
+	betas, ok := s.tempData["betas"].(map[string]*big.Int)
+	if !ok || betas == nil {
+		return nil, nil, fmt.Errorf("missing MtA beta values")
+	}
+	nus, ok := s.tempData["nus"].(map[string]*big.Int)
+	if !ok || nus == nil {
+		return nil, nil, fmt.Errorf("missing MtA nu values")
+	}
+
 	for id := range alphas {
 		// Add alpha_ij
 		delta_i.Add(delta_i, alphas[id])
 		delta_i.Mod(delta_i, N)
-		
+
 		sigma_i.Add(sigma_i, mus[id])
 		sigma_i.Mod(sigma_i, N)
-		
+
 		// Subtract beta_ji (stored in betas[id])
 		// Note: betas[id] is beta_{i->id}.
 		// Wait, in Round 2 loop: `betas[pid] = beta_ij`.
 		// pid is the peer ID. So betas[id] is indeed beta_{i->j}.
 		// And we want to subtract it.
-		
-		delta_i.Sub(delta_i, betas[id])
+
+		beta, ok := betas[id]
+		if !ok || beta == nil {
+			return nil, nil, fmt.Errorf("missing MtA beta for party %s", id)
+		}
+		delta_i.Sub(delta_i, beta)
 		delta_i.Mod(delta_i, N)
 		if delta_i.Sign() < 0 {
 			delta_i.Add(delta_i, N)
 		}
-		
-		sigma_i.Sub(sigma_i, nus[id])
+
+		nu, ok := nus[id]
+		if !ok || nu == nil {
+			return nil, nil, fmt.Errorf("missing MtA nu for party %s", id)
+		}
+		sigma_i.Sub(sigma_i, nu)
 		sigma_i.Mod(sigma_i, N)
 		if sigma_i.Sign() < 0 {
 			sigma_i.Add(sigma_i, N)
 		}
 	}
-	
+
 	s.tempData["delta_i"] = delta_i
 	s.tempData["sigma_i"] = sigma_i
 
@@ -108,17 +134,19 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 		DeltaI: delta_i,
 	}
 	data, err := json.Marshal(payload)
-	if err != nil { return nil, nil, err }
-	
-	msg := &SignMessage{
-		FromParty: s.params.PartyID,
-		ToParties: nil,
-		IsBcast:   true,
-		Data:      data,
-		TypeString: "SignRound3_Delta",
-		RoundNum:  3,
+	if err != nil {
+		return nil, nil, err
 	}
-	
+
+	msg := &SignMessage{
+		FromParty:  s.params.PartyID,
+		ToParties:  nil,
+		IsBcast:    true,
+		Data:       data,
+		TypeString: "SignRound3_Delta",
+		RoundNum:   3,
+	}
+
 	newState := &state{
 		params:       s.params,
 		keyData:      s.keyData,

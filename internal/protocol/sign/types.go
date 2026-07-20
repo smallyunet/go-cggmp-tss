@@ -8,8 +8,8 @@ import (
 
 // Signature represents the result of the signing protocol.
 type Signature struct {
-	R *big.Int
-	S *big.Int
+	R     *big.Int
+	S     *big.Int
 	RecID int // Recovery ID (optional)
 }
 
@@ -24,12 +24,12 @@ type PreSignature struct {
 
 // SignMessage is the concrete message type for Signing.
 type SignMessage struct {
-	FromParty   tss.PartyID
-	ToParties   []tss.PartyID
-	IsBcast     bool
-	Data        []byte
-	TypeString  string
-	RoundNum    uint32
+	FromParty  tss.PartyID
+	ToParties  []tss.PartyID
+	IsBcast    bool
+	Data       []byte
+	TypeString string
+	RoundNum   uint32
 }
 
 func (m *SignMessage) Type() string {

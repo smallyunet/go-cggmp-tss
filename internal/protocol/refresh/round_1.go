@@ -30,7 +30,7 @@ func (s *state) round1() (tss.StateMachine, []tss.Message, error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to generate polynomial: %w", err)
 	}
-	
+
 	s.tempData["polynomial"] = poly
 
 	// 3. Calculate VSS Commitments
@@ -48,12 +48,12 @@ func (s *state) round1() (tss.StateMachine, []tss.Message, error) {
 		PaillierN []byte
 		VSS       []*big.Int
 	}
-	
+
 	cData := CommitData{
 		PaillierN: paillierSk.PublicKey.N.Bytes(),
 		VSS:       vssCommitments,
 	}
-	
+
 	commitBytes, err := json.Marshal(cData)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to marshal commit data: %w", err)
@@ -68,12 +68,12 @@ func (s *state) round1() (tss.StateMachine, []tss.Message, error) {
 
 	// 5. Broadcast Commitment
 	msg := &RefreshMessage{
-		FromParty:   s.params.PartyID,
-		ToParties:   nil,
-		IsBcast:     true,
-		Data:        comm.C,
-		TypeString:  "RefreshRound1",
-		RoundNum:    1,
+		FromParty:  s.params.PartyID,
+		ToParties:  nil,
+		IsBcast:    true,
+		Data:       comm.C,
+		TypeString: "RefreshRound1",
+		RoundNum:   1,
 	}
 
 	return s, []tss.Message{msg}, nil

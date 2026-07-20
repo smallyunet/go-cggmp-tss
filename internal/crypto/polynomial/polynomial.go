@@ -49,7 +49,7 @@ func (p *Polynomial) Evaluate(x *big.Int) *big.Int {
 	// result = a_t
 	// for i = t-1 down to 0:
 	//   result = result * x + a_i
-	
+
 	q := p.Curve.Params().N
 	degree := len(p.Coefficients) - 1
 	result := new(big.Int).Set(p.Coefficients[degree])
