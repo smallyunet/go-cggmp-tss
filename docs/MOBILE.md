@@ -40,7 +40,9 @@ The wrapper exposes a `Session` object.
 - `(*Session).Details()`
 - `(*Session).Close()`
 
-All message passing is your responsibility (HTTP/gRPC/WebSocket/Libp2p/etc.). The wrapper only turns state-machine messages into JSON and back.
+All message passing is your responsibility (HTTP/gRPC/WebSocket/Libp2p/etc.).
+The transport must authenticate the complete JSON envelope. The wrapper only
+turns state-machine messages into JSON and back.
 
 ## JSON Schemas
 
@@ -51,7 +53,7 @@ All message passing is your responsibility (HTTP/gRPC/WebSocket/Libp2p/etc.). Th
   "partyID": "1",
   "allParties": ["1", "2", "3"],
   "threshold": 1,
-  "sessionID": "sid",
+  "sessionID": "keygen-session-0001",
   "oneRoundKeyGen": false
 }
 ```
@@ -63,7 +65,7 @@ All message passing is your responsibility (HTTP/gRPC/WebSocket/Libp2p/etc.). Th
   "partyID": "1",
   "allParties": ["1", "2", "3"],
   "threshold": 1,
-  "sessionID": "sid",
+  "sessionID": "signing-session-0001",
   "oneRoundKeyGen": false,
   "keyData": { "...": "..." },
   "msgToSign": "<hex-encoded-hash>"
@@ -77,7 +79,7 @@ All message passing is your responsibility (HTTP/gRPC/WebSocket/Libp2p/etc.). Th
   "partyID": "1",
   "allParties": ["1", "2", "3"],
   "threshold": 1,
-  "sessionID": "sid-refresh",
+  "sessionID": "refresh-session-0001",
   "oneRoundKeyGen": false,
   "keyData": { "...": "..." }
 }
@@ -92,9 +94,12 @@ All message passing is your responsibility (HTTP/gRPC/WebSocket/Libp2p/etc.). Th
   "isBroadcast": false,
   "data": "<hex>",
   "type": "...",
-  "round": 1
+  "round": 1,
+  "sessionID": "keygen-session-0001"
 }
 ```
+
+Session IDs must contain at least 16 bytes and must never be reused.
 
 ## Minimal Flow
 

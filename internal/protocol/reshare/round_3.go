@@ -320,6 +320,7 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 		Data:       data,
 		TypeString: "ReshareRound3",
 		RoundNum:   3,
+		Session:    append([]byte(nil), s.params.SessionID...),
 	}
 
 	s.receivedMsgs = make(map[string][]tss.Message)

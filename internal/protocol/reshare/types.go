@@ -22,6 +22,7 @@ type ReshareMessage struct {
 	Data       []byte
 	TypeString string
 	RoundNum   uint32
+	Session    []byte
 }
 
 func (m *ReshareMessage) Type() string {
@@ -46,4 +47,8 @@ func (m *ReshareMessage) Payload() []byte {
 
 func (m *ReshareMessage) RoundNumber() uint32 {
 	return m.RoundNum
+}
+
+func (m *ReshareMessage) SessionID() []byte {
+	return append([]byte(nil), m.Session...)
 }

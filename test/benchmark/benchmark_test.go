@@ -208,7 +208,7 @@ func BenchmarkOnlineSign3of3(b *testing.B) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("online-presign-session"),
+			SessionID: []byte("online-presign-session-v1-session"),
 		}
 		var err error
 		preSMs[j], outMsgs[j], err = sign.NewPreSignStateMachine(params, keyData[j])

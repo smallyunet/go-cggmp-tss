@@ -1,6 +1,7 @@
 package reshare
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/smallyu/go-cggmp-tss/internal/protocol/keygen"
@@ -26,6 +27,18 @@ type state struct {
 // oldParams: The configuration for the OLD committee.
 // oldKeyData: Existing key data (required for old committee members).
 func NewStateMachine(params *tss.Parameters, oldParams *tss.Parameters, oldKeyData *keygen.LocalPartySaveData) (tss.StateMachine, []tss.Message, error) {
+	if err := tss.ValidateCommitteeParameters(params); err != nil {
+		return nil, nil, err
+	}
+	if err := tss.ValidateCommitteeParameters(oldParams); err != nil {
+		return nil, nil, err
+	}
+	if params.PartyID == nil || params.PartyID.ID() == "" {
+		return nil, nil, fmt.Errorf("%w: local party is missing", tss.ErrInvalidParameters)
+	}
+	if !bytes.Equal(params.SessionID, oldParams.SessionID) {
+		return nil, nil, fmt.Errorf("%w: old and new committee session IDs differ", tss.ErrInvalidParameters)
+	}
 	// Identify role
 	myID := params.PartyID.ID()
 
@@ -90,8 +103,21 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 	if msg.RoundNumber() < uint32(s.round) {
 		return s, nil, nil
 	}
-	if msg.RoundNumber() > uint32(s.round) {
-		return nil, nil, fmt.Errorf("received message for round %d, expected %d", msg.RoundNumber(), s.round)
+	allParties := unionParties(s.oldParams.Parties, s.params.Parties)
+	allowedTypes := map[int][]string{
+		1: {"ReshareRound1"},
+		2: {"ReshareRound2_Decommit", "ReshareRound2_Share"},
+		3: {"ReshareRound3"},
+	}
+	if err := tss.ValidateMessageForParties(
+		s.params.PartyID,
+		allParties,
+		s.params.SessionID,
+		msg,
+		uint32(s.round),
+		allowedTypes[s.round]...,
+	); err != nil {
+		return nil, nil, err
 	}
 
 	senderID := msg.From().ID()
@@ -220,6 +246,24 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 	}
 
 	return s.nextRound()
+}
+
+func unionParties(groups ...[]tss.PartyID) []tss.PartyID {
+	seen := make(map[string]struct{})
+	var parties []tss.PartyID
+	for _, group := range groups {
+		for _, party := range group {
+			if party == nil {
+				continue
+			}
+			if _, ok := seen[party.ID()]; ok {
+				continue
+			}
+			seen[party.ID()] = struct{}{}
+			parties = append(parties, party)
+		}
+	}
+	return parties
 }
 
 func (s *state) nextRound() (tss.StateMachine, []tss.Message, error) {

@@ -28,8 +28,10 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 	N := curve.Params().N
 
 	// Initialize sum of shares with our own share of 0
-	myIdx := new(big.Int)
-	myIdx.SetString(s.params.PartyID.ID(), 10)
+	myIdx, err := tss.PartyIndex(s.params.Parties, s.params.PartyID.ID())
+	if err != nil {
+		return nil, nil, err
+	}
 
 	shareSum := poly.Evaluate(myIdx)
 
@@ -77,8 +79,8 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 			VSS       []*big.Int
 		}
 		var cData CommitData
-		if err := json.Unmarshal(data, &cData); err != nil {
-			return nil, nil, fmt.Errorf("failed to unmarshal commit data from %s: %w", id, err)
+		if unmarshalErr := json.Unmarshal(data, &cData); unmarshalErr != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal commit data from %s: %w", id, unmarshalErr)
 		}
 
 		paillierN := new(big.Int).SetBytes(cData.PaillierN)
@@ -179,6 +181,7 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 		Data:       data,
 		TypeString: "RefreshRound3",
 		RoundNum:   3,
+		Session:    append([]byte(nil), s.params.SessionID...),
 	}
 
 	s.receivedMsgs = make(map[string][]tss.Message)

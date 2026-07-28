@@ -16,7 +16,7 @@ import (
 )
 
 // Version is the library version for bindings.
-const Version = "v0.0.9"
+const Version = "v0.1.0"
 
 // VersionString returns the current library version.
 func VersionString() string {
@@ -257,6 +257,7 @@ func (s *Session) decodeMessage(msgJSON []byte) (tss.Message, error) {
 			Data:       dataBytes,
 			TypeString: dto.Type,
 			RoundNum:   dto.Round,
+			Session:    []byte(dto.SessionID),
 		}, nil
 	case protocolRefresh:
 		return &refresh.RefreshMessage{
@@ -266,6 +267,7 @@ func (s *Session) decodeMessage(msgJSON []byte) (tss.Message, error) {
 			Data:       dataBytes,
 			TypeString: dto.Type,
 			RoundNum:   dto.Round,
+			Session:    []byte(dto.SessionID),
 		}, nil
 	case protocolSign:
 		return &sign.SignMessage{
@@ -275,6 +277,7 @@ func (s *Session) decodeMessage(msgJSON []byte) (tss.Message, error) {
 			Data:       dataBytes,
 			TypeString: dto.Type,
 			RoundNum:   dto.Round,
+			Session:    []byte(dto.SessionID),
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported protocol: %s", s.protocol)
@@ -293,6 +296,10 @@ func marshalMessages(msgs []tss.Message) (string, error) {
 func encodeMessages(msgs []tss.Message) []MessageDTO {
 	out := make([]MessageDTO, 0, len(msgs))
 	for _, m := range msgs {
+		bound, ok := m.(tss.SessionBoundMessage)
+		if !ok {
+			continue
+		}
 		var toIDs []string
 		for _, p := range m.To() {
 			toIDs = append(toIDs, p.ID())
@@ -304,6 +311,7 @@ func encodeMessages(msgs []tss.Message) []MessageDTO {
 			Data:        hex.EncodeToString(m.Payload()),
 			Type:        m.Type(),
 			Round:       m.RoundNumber(),
+			SessionID:   string(bound.SessionID()),
 		})
 	}
 	return out

@@ -49,7 +49,7 @@ params := &tss.Parameters{
     Parties:   []tss.PartyID{p1, p2, p3}, // All participants
     Threshold: 1,                  // t (requires t+1 to sign)
     Curve:     "secp256k1",        // Curve
-    SessionID: []byte("unique-session-id"),
+    SessionID: []byte("unique-session-id-v1"), // At least 16 bytes; never reuse
 }
 ```
 
@@ -60,9 +60,9 @@ The KeyGen protocol generates a distributed private key. At the end, each party 
 ### Step 1: Initialize State Machine
 
 ```go
-import "github.com/smallyu/go-cggmp-tss/internal/protocol/keygen"
+import "github.com/smallyu/go-cggmp-tss/cggmp"
 
-state, outMsgs, err := keygen.NewStateMachine(params)
+state, outMsgs, err := cggmp.NewKeygen(params)
 if err != nil {
     panic(err)
 }
@@ -95,14 +95,11 @@ for {
         }
     }
 
-    // 4. Check if finished
-    if nextState == nil {
-        // Protocol finished
+    // 4. Advance state and check if finished
+    state = nextState
+    if state.Result() != nil {
         break
     }
-    
-    // 5. Advance state
-    state = nextState
 }
 ```
 
@@ -114,8 +111,9 @@ if result == nil {
     panic("KeyGen failed")
 }
 
-keyData := result.(*keygen.LocalPartySaveData)
-// Save keyData to disk securely!
+keyData := result.(*cggmp.KeyShare)
+encoded, err := cggmp.MarshalKeyShare(keyData)
+// Encrypt encoded before storing it. Restore with cggmp.ParseKeyShare.
 ```
 
 ## Threshold Signing
@@ -125,11 +123,11 @@ Signing requires the `LocalPartySaveData` from KeyGen and the hash of the messag
 ### Step 1: Initialize State Machine
 
 ```go
-import "github.com/smallyu/go-cggmp-tss/internal/protocol/sign"
+import "github.com/smallyu/go-cggmp-tss/cggmp"
 
 msgHash := sha256.Sum256([]byte("hello world"))
 
-state, outMsgs, err := sign.NewStateMachine(params, keyData, msgHash[:])
+state, outMsgs, err := cggmp.NewSigner(params, keyData, msgHash[:])
 if err != nil {
     panic(err)
 }
@@ -150,7 +148,7 @@ if result == nil {
     panic("Sign failed")
 }
 
-signature := result.(*sign.Signature)
+signature := result.(*cggmp.Signature)
 fmt.Printf("R: %x\nS: %x\n", signature.R, signature.S)
 ```
 ## Key Refresh
@@ -162,10 +160,10 @@ Proactive security often involves refreshing the secret shares without changing 
 The `NewStateMachine` for refresh takes the `oldKeyData` as input.
 
 ```go
-import "github.com/smallyu/go-cggmp-tss/internal/protocol/refresh"
+import "github.com/smallyu/go-cggmp-tss/cggmp"
 
 // keyData is your result from KeyGen
-state, outMsgs, err := refresh.NewStateMachine(params, keyData)
+state, outMsgs, err := cggmp.NewRefresh(params, keyData)
 if err != nil {
     panic(err)
 }
@@ -188,7 +186,7 @@ if result == nil {
     panic("Refresh failed")
 }
 
-newKeyData := result.(*keygen.LocalPartySaveData)
+newKeyData := result.(*cggmp.KeyShare)
 
 // IMPORTANT: The Public Key (X, Y) should match the old key data.
 // But the Secret Share (Xi) and other internal values will be different.

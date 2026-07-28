@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.1.0] - 2026-07-28
+### Added
+- **Public API**: Added the importable `cggmp` facade for KeyGen, Sign,
+  Presign, Refresh, and Reshare without relying on `internal/...` packages.
+- **Key-share codec**: Added precision-safe key-share serialization with owner,
+  curve-point, and Paillier-key validation.
+- **Session-bound wire messages**: Every protocol message now carries a session
+  ID and inbound messages are rejected when the session differs.
+- **Adversarial validation**: Added shared validation for protocol parameters,
+  participant membership, rounds, message types, routing, and payload bounds.
+
+### Changed
+- **Security claims**: Documented the project as an unaudited research alpha
+  rather than claiming complete CGGMP21 compliance.
+- **Bindings**: Updated Mobile and WASM wire schemas and version reporting to
+  v0.1.0.
+- **Session IDs**: Protocol constructors now require at least 16 bytes.
+
+### Security
+- Transport implementations must authenticate the complete wire envelope.
+- The experimental MtA and range-proof packages remain incomplete and are not
+  integrated into the protocol; production use remains unsupported.
+
 ## [v0.0.11] - 2026-07-20
 ### Fixed
 - **CI linting**: Resolved formatting, unchecked type assertions, unused code, shadowed variables, and ineffectual assignments reported by the pinned linter.

@@ -49,6 +49,7 @@ type KeyGenMessage struct {
 	Data       []byte
 	TypeString string
 	RoundNum   uint32
+	Session    []byte
 }
 
 func (m *KeyGenMessage) Type() string {
@@ -73,4 +74,8 @@ func (m *KeyGenMessage) Payload() []byte {
 
 func (m *KeyGenMessage) RoundNumber() uint32 {
 	return m.RoundNum
+}
+
+func (m *KeyGenMessage) SessionID() []byte {
+	return append([]byte(nil), m.Session...)
 }

@@ -12,6 +12,7 @@ type RefreshMessage struct {
 	Data       []byte
 	TypeString string
 	RoundNum   uint32
+	Session    []byte
 }
 
 func (m *RefreshMessage) Type() string {
@@ -36,4 +37,8 @@ func (m *RefreshMessage) Payload() []byte {
 
 func (m *RefreshMessage) RoundNumber() uint32 {
 	return m.RoundNum
+}
+
+func (m *RefreshMessage) SessionID() []byte {
+	return append([]byte(nil), m.Session...)
 }

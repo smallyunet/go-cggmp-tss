@@ -25,7 +25,7 @@ func TestDirectKeyGen(t *testing.T) {
 			Parties:        parties,
 			Threshold:      1, // t=1, n=3
 			Curve:          "secp256k1",
-			SessionID:      []byte("test-session-direct"),
+			SessionID:      []byte("test-session-direct-v1-session"),
 			OneRoundKeyGen: true,
 		}
 		sms[i], outMsgs[i], err = NewStateMachine(params)

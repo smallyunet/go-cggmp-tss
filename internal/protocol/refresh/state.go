@@ -19,6 +19,12 @@ type state struct {
 
 // NewStateMachine initializes a new Key Refresh state machine.
 func NewStateMachine(params *tss.Parameters, oldKeyData *keygen.LocalPartySaveData) (tss.StateMachine, []tss.Message, error) {
+	if err := tss.ValidateParameters(params); err != nil {
+		return nil, nil, err
+	}
+	if oldKeyData == nil || oldKeyData.PublicKeyX == nil || oldKeyData.PublicKeyY == nil {
+		return nil, nil, fmt.Errorf("%w: key share is incomplete", tss.ErrInvalidParameters)
+	}
 	s := &state{
 		params:     params,
 		oldKeyData: oldKeyData,
@@ -39,8 +45,13 @@ func NewStateMachine(params *tss.Parameters, oldKeyData *keygen.LocalPartySaveDa
 }
 
 func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error) {
-	if msg.RoundNumber() != uint32(s.round) {
-		return nil, nil, fmt.Errorf("received message for round %d, expected %d", msg.RoundNumber(), s.round)
+	allowedTypes := map[int][]string{
+		1: {"RefreshRound1"},
+		2: {"RefreshRound2_Decommit", "RefreshRound2_Share"},
+		3: {"RefreshRound3"},
+	}
+	if err := tss.ValidateMessage(s.params, msg, uint32(s.round), allowedTypes[s.round]...); err != nil {
+		return nil, nil, err
 	}
 
 	senderID := msg.From().ID()

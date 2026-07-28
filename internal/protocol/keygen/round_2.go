@@ -53,6 +53,7 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 		Data:       payload,
 		TypeString: "KeyGenRound2_Decommit",
 		RoundNum:   2,
+		Session:    append([]byte(nil), s.params.SessionID...),
 	}
 	outMsgs = append(outMsgs, broadcastMsg)
 
@@ -80,6 +81,7 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 			Data:       share.Bytes(),
 			TypeString: "KeyGenRound2_Share",
 			RoundNum:   2,
+			Session:    append([]byte(nil), s.params.SessionID...),
 		}
 		outMsgs = append(outMsgs, p2pMsg)
 	}

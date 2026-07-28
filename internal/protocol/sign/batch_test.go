@@ -26,7 +26,7 @@ func TestBatchSign(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session"),
+			SessionID: []byte("test-session-v1-session"),
 		}
 		keygenSMs[i], outMsgs[i], err = keygen.NewStateMachine(params)
 		if err != nil {
@@ -109,7 +109,7 @@ func TestBatchSign(t *testing.T) {
 				Parties:   parties,
 				Threshold: 1,
 				Curve:     "secp256k1",
-				SessionID: []byte("test-session-batch"),
+				SessionID: []byte("test-session-batch-v1-session"),
 			}
 			batchSMs[i], batchOutMsgs[i], err = NewBatchSignStateMachine(params, keyData[i], messages[:1])
 			if err != nil {

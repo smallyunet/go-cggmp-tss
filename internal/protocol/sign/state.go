@@ -22,6 +22,12 @@ type state struct {
 
 // NewStateMachine initializes a new Signing state machine.
 func NewStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySaveData, msg []byte) (tss.StateMachine, []tss.Message, error) {
+	if err := validateInputs(params, keyData); err != nil {
+		return nil, nil, err
+	}
+	if len(msg) == 0 {
+		return nil, nil, fmt.Errorf("%w: message digest is empty", tss.ErrInvalidParameters)
+	}
 	s := &state{
 		params:       params,
 		keyData:      keyData,
@@ -36,6 +42,9 @@ func NewStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySaveData,
 
 // NewPreSignStateMachine initializes a new Pre-Signing state machine (Offline phase).
 func NewPreSignStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySaveData) (tss.StateMachine, []tss.Message, error) {
+	if err := validateInputs(params, keyData); err != nil {
+		return nil, nil, err
+	}
 	s := &state{
 		params:       params,
 		keyData:      keyData,
@@ -49,6 +58,12 @@ func NewPreSignStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySa
 
 // NewOnlineStateMachine initializes a new Online Signing state machine.
 func NewOnlineStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySaveData, preSig *PreSignature, msg []byte) (tss.StateMachine, []tss.Message, error) {
+	if err := validateInputs(params, keyData); err != nil {
+		return nil, nil, err
+	}
+	if preSig == nil || len(msg) == 0 {
+		return nil, nil, fmt.Errorf("%w: presignature and message digest are required", tss.ErrInvalidParameters)
+	}
 	s := &state{
 		params:       params,
 		keyData:      keyData,
@@ -62,8 +77,14 @@ func NewOnlineStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySav
 }
 
 func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error) {
-	if msg.RoundNumber() != uint32(s.round) {
-		return nil, nil, fmt.Errorf("received message for round %d, expected %d", msg.RoundNumber(), s.round)
+	allowedTypes := map[int][]string{
+		1: {"SignRound1"},
+		2: {"SignRound2_MtA"},
+		3: {"SignRound3_Delta"},
+		4: {"SignRound4_Si", "SignRound4"},
+	}
+	if err := tss.ValidateMessage(s.params, msg, uint32(s.round), allowedTypes[s.round]...); err != nil {
+		return nil, nil, err
 	}
 
 	senderID := msg.From().ID()
@@ -116,6 +137,16 @@ func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error)
 	}
 
 	return s.nextRound()
+}
+
+func validateInputs(params *tss.Parameters, keyData *keygen.LocalPartySaveData) error {
+	if err := tss.ValidateParameters(params); err != nil {
+		return err
+	}
+	if keyData == nil || keyData.PaillierSk == nil || keyData.PublicKeyX == nil || keyData.PublicKeyY == nil {
+		return fmt.Errorf("%w: key share is incomplete", tss.ErrInvalidParameters)
+	}
+	return nil
 }
 
 func (s *state) nextRound() (tss.StateMachine, []tss.Message, error) {

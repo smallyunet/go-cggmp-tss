@@ -15,7 +15,8 @@ import (
 // 1. C = A^x * E(beta, r)  (Encrypted multiplication)
 // 2. X = x * G             (Consistency with public key, optional/variant)
 //
-// This is a simplified version of the MtAwc (MtA with check) proof from CGGMP21.
+// EXPERIMENTAL: This is an incomplete MtAwc-shaped proof and is not used by
+// the protocol implementation. It must not be treated as a CGGMP21 proof.
 type Proof struct {
 	// Commitments
 	Z *big.Int                 // z = A^alpha * E(gamma, rho) mod N^2

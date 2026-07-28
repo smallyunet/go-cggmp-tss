@@ -26,7 +26,7 @@ func TestPreSignE2E(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session"),
+			SessionID: []byte("test-session-v1-session"),
 		}
 		keygenSMs[i], outMsgs[i], err = keygen.NewStateMachine(params)
 		if err != nil {
@@ -101,7 +101,7 @@ func TestPreSignE2E(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session-presign"),
+			SessionID: []byte("test-session-presign-v1-session"),
 		}
 		preSignSMs[i], preSignOutMsgs[i], err = NewPreSignStateMachine(params, keyData[i])
 		if err != nil {
@@ -142,7 +142,7 @@ func TestPreSignE2E(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session-online"),
+			SessionID: []byte("test-session-online-v1-session"),
 		}
 		onlineSMs[i], onlineOutMsgs[i], err = NewOnlineStateMachine(params, keyData[i], preSignatures[i], hash[:])
 		if err != nil {

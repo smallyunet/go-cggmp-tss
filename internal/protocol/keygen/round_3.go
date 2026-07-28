@@ -30,8 +30,10 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 	// x_i = sum_j F_j(i)
 	// We need to calculate F_i(i) first.
 	// My index is s.params.PartyID
-	myIdx := new(big.Int)
-	myIdx.SetString(s.params.PartyID.ID(), 10)
+	myIdx, err := tss.PartyIndex(s.params.Parties, s.params.PartyID.ID())
+	if err != nil {
+		return nil, nil, err
+	}
 
 	xi := poly.Evaluate(myIdx)
 
@@ -119,13 +121,7 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 		// 1c. Verify Share
 		share := new(big.Int).SetBytes(shareMsg.Payload())
 
-		// Verify: share * G = sum( (index)^k * A_j,k )
-		// My index (i) is s.params.PartyID (we need numeric index)
-		// We assume PartyID.ID() is "1", "2", etc. or we map them.
-		// In `keygen_test.go` we used "1", "2".
-		// Let's parse ID to int.
-		myIdx := new(big.Int)
-		myIdx.SetString(s.params.PartyID.ID(), 10)
+		// Verify: share * G = sum((party index)^k * A_j,k).
 
 		// LHS: share * G
 		lhsX, lhsY := curve.ScalarBaseMult(share)
@@ -206,6 +202,7 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 		Data:       data,
 		TypeString: "KeyGenRound3_Proof",
 		RoundNum:   3,
+		Session:    append([]byte(nil), s.params.SessionID...),
 	}
 
 	// Save data for next round
@@ -214,6 +211,9 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 	s.saveData.XiY = Xi_y
 	s.saveData.PublicKeyX = X_x
 	s.saveData.PublicKeyY = X_y
+	s.saveData.ECDSAPubX = new(big.Int).Set(X_x)
+	s.saveData.ECDSAPubY = new(big.Int).Set(X_y)
+	s.saveData.ShareID = new(big.Int).Set(myIdx)
 	s.tempData["all_vss"] = allVss
 
 	// Clear received messages

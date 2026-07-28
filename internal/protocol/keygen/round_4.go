@@ -65,8 +65,10 @@ func (s *state) round4() (tss.StateMachine, []tss.Message, error) {
 		// j is the ID of the sender of this message
 
 		// Parse j's ID to int
-		jIdx := new(big.Int)
-		jIdx.SetString(id, 10)
+		jIdx, err := tss.PartyIndex(s.params.Parties, id)
+		if err != nil {
+			return nil, nil, err
+		}
 
 		// Calculate expected X_j
 		var expectedX, expectedY *big.Int

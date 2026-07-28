@@ -20,7 +20,8 @@ type PartyID interface {
 	Moniker() string
 
 	// Key returns the public key associated with this party's identity.
-	// This is used to verify the authenticity of messages sent by this party.
+	// Message authentication is the transport's responsibility; protocol state
+	// machines use ID for membership checks and do not verify signatures with Key.
 	Key() []byte
 }
 
@@ -45,6 +46,17 @@ type Message interface {
 
 	// RoundNumber returns the protocol round this message belongs to.
 	RoundNumber() uint32
+}
+
+// SessionBoundMessage is a protocol message bound to a specific session.
+//
+// Protocol state machines require this interface for inbound messages so that
+// messages from another run cannot be replayed into the current session.
+type SessionBoundMessage interface {
+	Message
+
+	// SessionID returns the protocol session identifier carried by the message.
+	SessionID() []byte
 }
 
 // StateMachine is the core engine that drives the protocol.

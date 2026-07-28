@@ -32,6 +32,7 @@ type MessageDTO struct {
 	Data        string   `json:"data"` // Hex encoded
 	Type        string   `json:"type"`
 	Round       uint32   `json:"round"`
+	SessionID   string   `json:"sessionID"`
 }
 
 // LocalPartySaveDataDTO uses strings for big.Int values.

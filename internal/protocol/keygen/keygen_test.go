@@ -24,7 +24,7 @@ func TestRound1(t *testing.T) {
 		Parties:   []tss.PartyID{p1, p2, p3},
 		Threshold: 2,
 		Curve:     "secp256k1",
-		SessionID: []byte("test-session"),
+		SessionID: []byte("test-session-v1-session"),
 	}
 
 	sm, msgs, err := NewStateMachine(params)
@@ -68,7 +68,7 @@ func TestRound2Transition(t *testing.T) {
 		Parties:   []tss.PartyID{p1, p2, p3},
 		Threshold: 2,
 		Curve:     "secp256k1",
-		SessionID: []byte("test-session"),
+		SessionID: []byte("test-session-v1-session"),
 	}
 
 	// Start Round 1
@@ -86,6 +86,7 @@ func TestRound2Transition(t *testing.T) {
 		Data:       []byte("commitment_from_2"),
 		TypeString: "KeyGenRound1",
 		RoundNum:   1,
+		Session:    params.SessionID,
 	}
 	msg3 := &KeyGenMessage{
 		FromParty:  p3,
@@ -93,6 +94,7 @@ func TestRound2Transition(t *testing.T) {
 		Data:       []byte("commitment_from_3"),
 		TypeString: "KeyGenRound1",
 		RoundNum:   1,
+		Session:    params.SessionID,
 	}
 
 	// Update with msg2
@@ -178,7 +180,7 @@ func TestE2E(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1, // t=1, n=3
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session"),
+			SessionID: []byte("test-session-v1-session"),
 		}
 		sms[i], outMsgs[i], err = NewStateMachine(params)
 		if err != nil {

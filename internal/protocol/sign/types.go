@@ -30,6 +30,7 @@ type SignMessage struct {
 	Data       []byte
 	TypeString string
 	RoundNum   uint32
+	Session    []byte
 }
 
 func (m *SignMessage) Type() string {
@@ -54,4 +55,8 @@ func (m *SignMessage) Payload() []byte {
 
 func (m *SignMessage) RoundNumber() uint32 {
 	return m.RoundNum
+}
+
+func (m *SignMessage) SessionID() []byte {
+	return append([]byte(nil), m.Session...)
 }

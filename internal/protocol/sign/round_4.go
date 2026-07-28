@@ -143,6 +143,7 @@ func (s *state) round4() (tss.StateMachine, []tss.Message, error) {
 		Data:       data,
 		TypeString: "SignRound4_Si",
 		RoundNum:   4,
+		Session:    append([]byte(nil), s.params.SessionID...),
 	}
 
 	// We need a final step to aggregate s_i

@@ -34,7 +34,7 @@ func TestSignE2E(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session"),
+			SessionID: []byte("test-session-v1-session"),
 		}
 		keygenSMs[i], outMsgs[i], err = keygen.NewStateMachine(params)
 		if err != nil {
@@ -108,7 +108,7 @@ func TestSignE2E(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("sign-session"),
+			SessionID: []byte("sign-session-v1-session"),
 		}
 		signSMs[i], signOutMsgs[i], err = NewStateMachine(params, keyData[i], hash[:])
 		if err != nil {

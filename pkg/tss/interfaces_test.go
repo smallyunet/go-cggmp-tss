@@ -31,6 +31,7 @@ type MockMessage struct {
 	isBroadcast bool
 	payload     []byte
 	round       uint32
+	sessionID   []byte
 }
 
 func (m *MockMessage) Type() string {
@@ -57,12 +58,17 @@ func (m *MockMessage) RoundNumber() uint32 {
 	return m.round
 }
 
+func (m *MockMessage) SessionID() []byte {
+	return m.sessionID
+}
+
 func TestInterfaces(t *testing.T) {
 	// Verify MockPartyID implements PartyID
 	var _ PartyID = &MockPartyID{}
 
 	// Verify MockMessage implements Message
 	var _ Message = &MockMessage{}
+	var _ SessionBoundMessage = &MockMessage{}
 
 	// Test basic usage
 	pid := &MockPartyID{id: "p1", moniker: "party1", key: []byte("key1")}

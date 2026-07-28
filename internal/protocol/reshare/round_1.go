@@ -76,6 +76,7 @@ func (s *state) round1() (tss.StateMachine, []tss.Message, error) {
 		Data:       comm.C,
 		TypeString: "ReshareRound1",
 		RoundNum:   1,
+		Session:    append([]byte(nil), s.params.SessionID...),
 	}
 
 	return s, []tss.Message{msg}, nil

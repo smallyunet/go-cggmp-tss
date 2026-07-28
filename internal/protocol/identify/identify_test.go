@@ -34,7 +34,7 @@ func TestIdentifyProof(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session"),
+			SessionID: []byte("test-session-v1-session"),
 		}
 		keygenSMs[i], outMsgs[i], err = keygen.NewStateMachine(params)
 		if err != nil {
@@ -106,7 +106,7 @@ func TestIdentifyProof(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session-identify"),
+			SessionID: []byte("test-session-identify-v1-session"),
 		}
 
 		proof, err := NewIdentifyProof(params, keyData[0])
@@ -134,7 +134,7 @@ func TestIdentifyProof(t *testing.T) {
 				Parties:   parties,
 				Threshold: 1,
 				Curve:     "secp256k1",
-				SessionID: []byte("test-session-identify"),
+				SessionID: []byte("test-session-identify-v1-session"),
 			}
 
 			session, proof, err := NewIdentifySession(params, keyData[i])
@@ -172,7 +172,7 @@ func TestIdentifyProof(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session-identify"),
+			SessionID: []byte("test-session-identify-v1-session"),
 		}
 
 		proof, err := NewIdentifyProof(params, keyData[0])

@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/smallyu/go-cggmp-tss/internal/protocol/keygen"
-	"github.com/smallyu/go-cggmp-tss/internal/protocol/sign"
+	"github.com/smallyu/go-cggmp-tss/cggmp"
 	"github.com/smallyu/go-cggmp-tss/pkg/tss"
 )
 
@@ -63,7 +62,7 @@ func main() {
 }
 
 // runKeyGen simulates the distributed key generation protocol.
-func runKeyGen(parties []tss.PartyID, threshold int) ([]*keygen.LocalPartySaveData, error) {
+func runKeyGen(parties []tss.PartyID, threshold int) ([]*cggmp.KeyShare, error) {
 	n := len(parties)
 	sms := make([]tss.StateMachine, n)
 	outMsgs := make([][]tss.Message, n)
@@ -75,10 +74,10 @@ func runKeyGen(parties []tss.PartyID, threshold int) ([]*keygen.LocalPartySaveDa
 			Parties:   parties,
 			Threshold: threshold,
 			Curve:     "secp256k1",
-			SessionID: []byte("keygen-example-session"),
+			SessionID: []byte("keygen-example-session-v1-session"),
 		}
 		var err error
-		sms[i], outMsgs[i], err = keygen.NewStateMachine(params)
+		sms[i], outMsgs[i], err = cggmp.NewKeygen(params)
 		if err != nil {
 			return nil, err
 		}
@@ -90,20 +89,20 @@ func runKeyGen(parties []tss.PartyID, threshold int) ([]*keygen.LocalPartySaveDa
 	}
 
 	// Collect results
-	keyData := make([]*keygen.LocalPartySaveData, n)
+	keyData := make([]*cggmp.KeyShare, n)
 	for i := 0; i < n; i++ {
 		result := sms[i].Result()
 		if result == nil {
 			return nil, fmt.Errorf("party %d did not complete", i)
 		}
-		keyData[i] = result.(*keygen.LocalPartySaveData)
+		keyData[i] = result.(*cggmp.KeyShare)
 	}
 
 	return keyData, nil
 }
 
 // runSign simulates the threshold signing protocol.
-func runSign(parties []tss.PartyID, keyData []*keygen.LocalPartySaveData, msgHash []byte) (*sign.Signature, error) {
+func runSign(parties []tss.PartyID, keyData []*cggmp.KeyShare, msgHash []byte) (*cggmp.Signature, error) {
 	n := len(parties)
 	sms := make([]tss.StateMachine, n)
 	outMsgs := make([][]tss.Message, n)
@@ -115,10 +114,10 @@ func runSign(parties []tss.PartyID, keyData []*keygen.LocalPartySaveData, msgHas
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("sign-example-session"),
+			SessionID: []byte("sign-example-session-v1-session"),
 		}
 		var err error
-		sms[i], outMsgs[i], err = sign.NewStateMachine(params, keyData[i], msgHash)
+		sms[i], outMsgs[i], err = cggmp.NewSigner(params, keyData[i], msgHash)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +134,7 @@ func runSign(parties []tss.PartyID, keyData []*keygen.LocalPartySaveData, msgHas
 		return nil, fmt.Errorf("signing did not complete")
 	}
 
-	return result.(*sign.Signature), nil
+	return result.(*cggmp.Signature), nil
 }
 
 // routeMessages simulates message routing between parties.

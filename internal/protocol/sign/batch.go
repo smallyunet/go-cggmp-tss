@@ -11,11 +11,8 @@ type BatchSignResult struct {
 }
 
 // NewBatchSignStateMachine creates a state machine that signs multiple messages.
-// This is more efficient than signing messages one-by-one as it can
-// amortize some cryptographic overhead.
-//
-// The implementation generates a presigning tuple for each message and then
-// uses the online phase to produce all signatures.
+// The current implementation signs only the first message. It is retained for
+// backward compatibility while a real batch protocol is designed.
 func NewBatchSignStateMachine(params *tss.Parameters, keyData *keygen.LocalPartySaveData, messages [][]byte) (tss.StateMachine, []tss.Message, error) {
 	if len(messages) == 0 {
 		return nil, nil, tss.ErrInvalidParameters

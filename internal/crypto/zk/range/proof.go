@@ -12,8 +12,8 @@ import (
 // Proof represents a Zero-Knowledge Range Proof.
 // It proves that a value x encrypted in a Paillier ciphertext C is within a specific range [0, 2^bits].
 //
-// Note: This is a simplified implementation structure for the roadmap milestone.
-// A full implementation (e.g., Bulletproofs or specialized Paillier range proofs) would be significantly more complex.
+// EXPERIMENTAL: This relation proof does not currently enforce the requested
+// range and is not used by the protocol implementation.
 type Proof struct {
 	// Commitments
 	A *big.Int // Commitment to the value

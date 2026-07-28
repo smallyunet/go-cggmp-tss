@@ -145,6 +145,7 @@ func (s *state) round3() (tss.StateMachine, []tss.Message, error) {
 		Data:       data,
 		TypeString: "SignRound3_Delta",
 		RoundNum:   3,
+		Session:    append([]byte(nil), s.params.SessionID...),
 	}
 
 	newState := &state{

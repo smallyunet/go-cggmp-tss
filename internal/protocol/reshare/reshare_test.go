@@ -33,7 +33,7 @@ func TestRefreshE2E(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session"),
+			SessionID: []byte("test-session-v1-session"),
 		}
 		keygenSMs[i], outMsgs[i], err = keygen.NewStateMachine(params)
 		if err != nil {
@@ -112,7 +112,7 @@ func TestRefreshE2E(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session-refresh"),
+			SessionID: []byte("test-session-refresh-v1-session"),
 		}
 		refreshSMs[i], refreshOutMsgs[i], err = NewStateMachine(params, params, keyData[i])
 		if err != nil {
@@ -182,7 +182,7 @@ func TestReshareE2E(t *testing.T) {
 			Parties:   keygenParties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session-keygen"),
+			SessionID: []byte("test-session-keygen-v1-session"),
 		}
 		sm, msgs, err := keygen.NewStateMachine(params)
 		if err != nil {
@@ -286,6 +286,7 @@ func TestReshareE2E(t *testing.T) {
 		Parties:   keygenParties,
 		Threshold: 1,
 		Curve:     "secp256k1",
+		SessionID: []byte("test-session-reshare-v1-session"),
 	}
 
 	reshareSMs := make(map[string]tss.StateMachine)
@@ -303,7 +304,7 @@ func TestReshareE2E(t *testing.T) {
 			Parties:   reshareParties, // The NEW committee list
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("test-session-reshare"),
+			SessionID: []byte("test-session-reshare-v1-session"),
 		}
 
 		// Prepare old data if this party was in old committee

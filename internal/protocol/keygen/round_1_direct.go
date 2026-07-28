@@ -89,6 +89,7 @@ func (s *state) round1Direct() (tss.StateMachine, []tss.Message, error) {
 		Data:       payload,
 		TypeString: "KeyGen1Round_Direct_Broadcast", // Distinguishes from Round 1 Commit
 		RoundNum:   1,
+		Session:    append([]byte(nil), s.params.SessionID...),
 	}
 	outMsgs = append(outMsgs, bcastMsg)
 
@@ -110,6 +111,7 @@ func (s *state) round1Direct() (tss.StateMachine, []tss.Message, error) {
 			Data:       share.Bytes(),
 			TypeString: "KeyGen1Round_Direct_Share",
 			RoundNum:   1, // It's still Round 1 in this protocol
+			Session:    append([]byte(nil), s.params.SessionID...),
 		}
 		outMsgs = append(outMsgs, p2pMsg)
 	}

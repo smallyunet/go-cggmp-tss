@@ -110,6 +110,7 @@ func (s *state) round2() (tss.StateMachine, []tss.Message, error) {
 			Data:       data,
 			TypeString: "SignRound2_MtA",
 			RoundNum:   2,
+			Session:    append([]byte(nil), s.params.SessionID...),
 		}
 		outMsgs = append(outMsgs, msg)
 	}

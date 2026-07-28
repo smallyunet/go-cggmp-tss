@@ -26,6 +26,9 @@ type state struct {
 // NewStateMachine initializes a new KeyGen state machine.
 // It immediately executes Round 1 logic to generate the first set of messages.
 func NewStateMachine(params *tss.Parameters) (tss.StateMachine, []tss.Message, error) {
+	if err := tss.ValidateParameters(params); err != nil {
+		return nil, nil, err
+	}
 	s := &state{
 		params: params,
 		round:  1,
@@ -45,9 +48,16 @@ func NewStateMachine(params *tss.Parameters) (tss.StateMachine, []tss.Message, e
 }
 
 func (s *state) Update(msg tss.Message) (tss.StateMachine, []tss.Message, error) {
-	// Validate message round
-	if msg.RoundNumber() != uint32(s.round) {
-		return nil, nil, fmt.Errorf("received message for round %d, expected %d", msg.RoundNumber(), s.round)
+	allowedTypes := []string{"KeyGenRound1"}
+	if s.params.OneRoundKeyGen {
+		allowedTypes = []string{"KeyGen1Round_Direct_Broadcast", "KeyGen1Round_Direct_Share"}
+	} else if s.round == 2 {
+		allowedTypes = []string{"KeyGenRound2_Decommit", "KeyGenRound2_Share"}
+	} else if s.round == 3 {
+		allowedTypes = []string{"KeyGenRound3_Proof"}
+	}
+	if err := tss.ValidateMessage(s.params, msg, uint32(s.round), allowedTypes...); err != nil {
+		return nil, nil, err
 	}
 
 	// Validate sender

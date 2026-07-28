@@ -180,7 +180,7 @@ func TestFullKeyGenToSign(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("sign-session"),
+			SessionID: []byte("sign-session-v1-session"),
 		}
 		var err error
 		signSMs[i], outMsgs[i], err = sign.NewStateMachine(params, keyData[i], msg[:])
@@ -236,7 +236,7 @@ func TestKeyRefreshFlow(t *testing.T) {
 			Parties:   parties,
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("refresh-session"),
+			SessionID: []byte("refresh-session-v1-session"),
 		}
 		var err error
 		refreshSMs[i], outMsgs[i], err = refresh.NewStateMachine(params, keyData[i])

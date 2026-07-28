@@ -4,25 +4,30 @@
 [![CI](https://github.com/smallyu/go-cggmp-tss/actions/workflows/ci.yml/badge.svg)](https://github.com/smallyu/go-cggmp-tss/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A pure Go implementation of the **CGGMP21** Threshold Signature Scheme (TSS) protocol.
+A pure Go research implementation of a **CGGMP21-inspired** Threshold
+Signature Scheme (TSS) state machine.
 
-> **Note**: This library is currently in active development (Alpha). Do not use in production environments without a thorough security audit.
+> **Security status**: v0.1.0 is an unaudited alpha and is not production
+> ready. The honest-party flows are tested, but the implementation does not yet
+> include every malicious-security proof required for CGGMP21 compliance.
 
 ## Overview
 
-This library implements the [CGGMP21](https://eprint.iacr.org/2021/060) protocol (Canetti-Gennaro-Goldfeder-Makriyannis-Peled), which allows a group of parties to generate a key and sign messages without ever reconstructing the private key in a single location.
+This library explores the protocol structure described by
+[CGGMP21](https://eprint.iacr.org/2021/060), allowing parties to generate a key
+and sign without reconstructing the private key in one place.
 
 ### Key Features
 
-*   **Protocol Compliance**: Implements CGGMP21 protocols:
+*   **Protocol flows**:
     - 4-round Key Generation
     - 5-round Signing
     - 4-round Key Refresh
     - 4-round Key Resharing (committee/threshold changes)
     - Presigning (offline preprocessing)
 *   **Identification Protocol**: ZKP proof of key ownership for accountability.
-*   **Batch Signing**: Sign multiple messages efficiently.
-*   **Network Agnostic**: Designed as a pure state machine. You bring your own transport layer (HTTP, gRPC, Libp2p, NATS, etc.).
+*   **Network Agnostic**: Designed as a pure state machine. You bring an
+    authenticated transport layer (HTTP, gRPC, Libp2p, NATS, etc.).
 *   **Type Safety**: Leverages Go's strong typing to prevent common implementation errors.
 *   **Curve Support**: Native support for `secp256k1`.
 
@@ -38,12 +43,12 @@ The core of the library is the `StateMachine` pattern. Here is a high-level view
 
 ```go
 import (
+    "github.com/smallyu/go-cggmp-tss/cggmp"
     "github.com/smallyu/go-cggmp-tss/pkg/tss"
-    "github.com/smallyu/go-cggmp-tss/internal/protocol/keygen"
 )
 
 // 1. Initialize the State Machine
-state, outMsgs, err := keygen.NewStateMachine(params)
+state, outMsgs, err := cggmp.NewKeygen(params)
 
 // 2. Run the Event Loop
 for {
@@ -59,16 +64,23 @@ for {
     // Send output messages to other parties
     network.Broadcast(outMsgs)
     
+    state = nextState
+
     // Check for completion
-    if nextState == nil {
-        result := state.Result()
+    if result := state.Result(); result != nil {
         // Handle result (KeyShare or Signature)
         break
     }
-    
-    state = nextState
 }
 ```
+
+`SessionID` must contain at least 16 bytes and must be unique for every
+protocol run. The transport must authenticate the complete message envelope,
+including session ID, sender, recipients, round, type, and payload.
+
+Persist key shares with `cggmp.MarshalKeyShare` and restore them with
+`cggmp.ParseKeyShare`. The serialized data contains secret material and must be
+encrypted at rest.
 
 For a complete step-by-step guide, please read the **[Usage Documentation](docs/USAGE.md)**.
 
@@ -82,11 +94,11 @@ For a complete step-by-step guide, please read the **[Usage Documentation](docs/
 
 The library is structured to separate cryptographic primitives from protocol logic:
 
-*   `pkg/tss`: Core interfaces (`PartyID`, `Message`, `StateMachine`).
+*   `cggmp`: Supported public constructors and result types.
+*   `pkg/tss`: Transport-facing interfaces (`PartyID`, `Message`, `StateMachine`).
 *   `internal/crypto`: Cryptographic primitives (Paillier, ZK Proofs, Commitments).
 *   `internal/protocol`: Protocol implementations (`keygen`, `sign`, `refresh`, `reshare`, `identify`).
 
 ## License
 
 MIT
-

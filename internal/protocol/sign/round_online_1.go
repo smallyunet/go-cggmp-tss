@@ -54,6 +54,7 @@ func (s *state) roundOnline1() (tss.StateMachine, []tss.Message, error) {
 		Data:       data,
 		TypeString: "SignRound4", // Reuse existing type string so round5 can process it
 		RoundNum:   4,            // Reuse existing round number
+		Session:    append([]byte(nil), s.params.SessionID...),
 	}
 
 	return s, []tss.Message{msg}, nil

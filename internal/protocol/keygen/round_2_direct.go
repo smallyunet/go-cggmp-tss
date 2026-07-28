@@ -21,8 +21,10 @@ func (s *state) round2Direct() (tss.StateMachine, []tss.Message, error) {
 	curve := poly.Curve
 
 	// Prepare to calculate x_i
-	myIdx := new(big.Int)
-	myIdx.SetString(s.params.PartyID.ID(), 10)
+	myIdx, err := tss.PartyIndex(s.params.Parties, s.params.PartyID.ID())
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// x_i starts with our own share F_i(i)
 	xi := poly.Evaluate(myIdx)

@@ -16,7 +16,7 @@ func TestMobileWrapper_KeyGenAndSign(t *testing.T) {
 	party1 := "1"
 	party2 := "2"
 	all := []string{party1, party2}
-	sessionID := "sid"
+	sessionID := "sid-v1-session-0001"
 
 	p1Params, _ := json.Marshal(ParamsInput{
 		PartyID:        party1,
@@ -66,7 +66,7 @@ func TestMobileWrapper_KeyGenRefreshAndSign(t *testing.T) {
 	party2 := "2"
 	party3 := "3"
 	all := []string{party1, party2, party3}
-	sessionID := "sid-refresh"
+	sessionID := "sid-refresh-v1-session"
 
 	p1Params, _ := json.Marshal(ParamsInput{
 		PartyID:        party1,

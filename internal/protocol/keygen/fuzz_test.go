@@ -27,7 +27,7 @@ func FuzzRound3Decommit(f *testing.F) {
 			Parties:   []tss.PartyID{p1, p2},
 			Threshold: 1,
 			Curve:     "secp256k1",
-			SessionID: []byte("fuzz-session"),
+			SessionID: []byte("fuzz-session-v1-session"),
 		}
 
 		// Mock polynomial

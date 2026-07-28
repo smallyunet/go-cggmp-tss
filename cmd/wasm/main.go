@@ -28,7 +28,7 @@ var sessions = make(map[string]*SessionWrapper)
 func main() {
 	c := make(chan struct{})
 
-	fmt.Println("Go CGGMP-TSS WASM Initialized (v0.0.9)")
+	fmt.Println("Go CGGMP-TSS WASM Initialized (v0.1.0)")
 
 	// Expose Go functions to JS
 	js.Global().Set("GoCGGMP", map[string]interface{}{
@@ -233,6 +233,7 @@ func Update(this js.Value, args []js.Value) interface{} {
 		Data        string   `json:"data"` // Hex encoded
 		Type        string   `json:"type"`
 		Round       uint32   `json:"round"`
+		SessionID   string   `json:"sessionID"`
 	}
 	var dto MessageDTO
 	if err := json.Unmarshal([]byte(msgJSON), &dto); err != nil {
@@ -263,6 +264,7 @@ func Update(this js.Value, args []js.Value) interface{} {
 			Data:       dataBytes,
 			TypeString: dto.Type,
 			RoundNum:   dto.Round,
+			Session:    []byte(dto.SessionID),
 		}
 	case "refresh":
 		realMsg = &refresh.RefreshMessage{
@@ -272,6 +274,7 @@ func Update(this js.Value, args []js.Value) interface{} {
 			Data:       dataBytes,
 			TypeString: dto.Type,
 			RoundNum:   dto.Round,
+			Session:    []byte(dto.SessionID),
 		}
 	case "sign":
 		realMsg = &sign.SignMessage{
@@ -281,6 +284,7 @@ func Update(this js.Value, args []js.Value) interface{} {
 			Data:       dataBytes,
 			TypeString: dto.Type,
 			RoundNum:   dto.Round,
+			Session:    []byte(dto.SessionID),
 		}
 	default:
 		return fmt.Sprintf("error: unsupported session type: %s", wrapper.Type)
@@ -387,6 +391,10 @@ func (p *SimplePartyID) Key() []byte     { return []byte(p.IDVal) }
 func encodeMessages(msgs []tss.Message) []interface{} {
 	var out []interface{}
 	for _, m := range msgs {
+		bound, ok := m.(tss.SessionBoundMessage)
+		if !ok {
+			continue
+		}
 		out = append(out, map[string]interface{}{
 			"from": m.From().ID(),
 			"to": func() []string {
@@ -400,6 +408,7 @@ func encodeMessages(msgs []tss.Message) []interface{} {
 			"data":        hex.EncodeToString(m.Payload()),
 			"type":        m.Type(),
 			"round":       m.RoundNumber(),
+			"sessionID":   string(bound.SessionID()),
 		})
 	}
 	return out
